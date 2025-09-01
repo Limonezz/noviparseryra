@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.log
+news.db
+subscribers.txt
+my_session.txt
+session.txt
