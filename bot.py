@@ -196,11 +196,25 @@ async def send_news_to_all_subscribers(user_client, bot_client):
     logger.info(f"✅ Отправка завершена для {len(subscribers)} подписчиков")
 
 def should_send_news():
-    """Проверяем, нужно ли сейчас рассылать новости"""
-    moscow_time = datetime.now(pytz.timezone('Europe/Moscow'))
-    current_hour = moscow_time.hour
-    current_minute = moscow_time.minute
-    return current_hour in [9, 13, 19] and current_minute == 0
+    """Проверяем, нужно ли сейчас рассылать новости по МСК"""
+    try:
+        # Правильное получение московского времени
+        utc_now = datetime.utcnow()
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        moscow_time = moscow_tz.fromutc(utc_now)
+        
+        current_hour = moscow_time.hour
+        current_minute = moscow_time.minute
+        
+        # Время рассылки: 9:00, 13:00, 19:00 по МСК
+        send_times = [(9, 0), (13, 0), (19, 0)]
+        
+        logger.info(f"🕒 Проверка времени: МСК {current_hour:02d}:{current_minute:02d}")
+        return (current_hour, current_minute) in send_times
+        
+    except Exception as e:
+        logger.error(f"Ошибка проверки времени: {e}")
+        return False
 
 # ===== ОСНОВНАЯ ФУНКЦИЯ =====
 async def main():
