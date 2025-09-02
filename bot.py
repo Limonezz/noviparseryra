@@ -44,7 +44,8 @@ SPAM_PHRASES = [
 
 SPAM_URL_THRESHOLD = 2
 UNIQUE_WORDS_THRESHOLD = 5
-MAX_MESSAGE_AGE_HOURS = 24  # Только свежие новости (24 часа)
+MAX_MESSAGE_AGE_HOURS = 8  # Новости за последние 8 часов
+MAX_POSTS_PER_CHANNEL = 2  # Максимум 2 новости от одного канала
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -217,8 +218,9 @@ async def parse_channel(user_client, channel_name, conn):
     """Парсинг канала с фильтрацией"""
     try:
         logger.info(f"🔍 Парсим: {channel_name}")
-        messages = await user_client.get_messages(channel_name, limit=20)
+        messages = await user_client.get_messages(channel_name, limit=50)  # Увеличили лимит для поиска свежих
         new_posts = []
+        posts_count = 0
         
         for message in messages:
             if not message.text or not message.text.strip():
@@ -260,8 +262,10 @@ async def parse_channel(user_client, channel_name, conn):
                 })
                 
                 mark_post_as_sent(conn, post_id, channel_name, message.text, categories)
+                posts_count += 1
                 
-                if len(new_posts) >= 3:
+                # Ограничиваем количество постов от одного канала
+                if posts_count >= MAX_POSTS_PER_CHANNEL:
                     break
         
         return new_posts
@@ -280,7 +284,7 @@ async def send_news_to_user(bot_client, user_id, posts):
     try:
         await bot_client.send_message(
             user_id,
-            f"📊 **СВЕЖИЕ НОВОСТИ**\n"
+            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 8 часов)**\n"
             f"🕒 *Актуально на:* {moscow_time} (МСК)\n"
             f"📈 *Новостей:* {len(posts)}\n"
             f"✅ *Без спама и повторов*\n"
@@ -366,7 +370,7 @@ async def main():
     @bot_client.on(events.NewMessage(pattern='/news'))
     async def news_handler(event):
         user_id = event.chat_id
-        await event.reply("⏳ Ищу свежие новости...")
+        await event.reply("⏳ Ищу свежие новости за последние 8 часов...")
         all_news = await collect_news(user_client)
         await send_news_to_user(bot_client, user_id, all_news)
     
@@ -375,7 +379,8 @@ async def main():
         await bot_client.start(bot_token=BOT_TOKEN)
         
         logger.info("✅ Бот запущен")
-        logger.info("🛡️ Фильтры: спам, уникальность, свежесть")
+        logger.info(f"🛡️ Фильтры: спам, уникальность, свежесть (последние {MAX_MESSAGE_AGE_HOURS} часов)")
+        logger.info(f"📰 Максимум {MAX_POSTS_PER_CHANNEL} новости от одного канала")
         
         while True:
             if should_send_news():
