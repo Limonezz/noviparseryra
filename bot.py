@@ -370,7 +370,7 @@ async def main():
     @bot_client.on(events.NewMessage(pattern='/news'))
     async def news_handler(event):
         user_id = event.chat_id
-        await event.reply("⏳ Ищу свежие новости за последние 8 часов...")
+        await event.reply("⏳ Ищу свежие новости за последние 4 часа...")
         all_news = await collect_news(user_client)
         await send_news_to_user(bot_client, user_id, all_news)
     
