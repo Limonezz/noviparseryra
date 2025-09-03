@@ -44,7 +44,7 @@ SPAM_PHRASES = [
 
 SPAM_URL_THRESHOLD = 2
 UNIQUE_WORDS_THRESHOLD = 5
-MAX_MESSAGE_AGE_HOURS = 8  # Новости за последние 8 часов
+MAX_MESSAGE_AGE_HOURS = 4  # Новости за последние 4 часов
 MAX_POSTS_PER_CHANNEL = 2  # Максимум 2 новости от одного канала
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
