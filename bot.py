@@ -19,10 +19,10 @@ CHANNELS = [
     'gubernator_46', 'kursk_info46', 'Alekhin_Telega', 'rian_ru',
     'kursk_ak46', 'zhest_kursk_146', 'novosti_efir', 'kursk_tipich',
     'seymkursk', 'kursk_smi', 'kursk_russia', 'belgorod01', 'kurskadm',
-    'Avtokadr46', 'kurskbomond', 'prigranichie_radar1', 'grohot_pgr',
+    'incident46', 'kurskbomond', 'prigranichie_radar1', 'grohot_pgr',
     'kursk_nasv', 'mchs_46', 'patriot046', 'kursk_now', 'Hinshtein',
-    'incidentkursk', 'zhest_belgorod', 'Pogoda_Kursk', 'pb_032',
-    'tipicl32', 'bryansk_smi'
+    'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
+    'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru',''
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
