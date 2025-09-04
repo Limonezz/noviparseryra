@@ -22,7 +22,7 @@ CHANNELS = [
     'incident46', 'kurskbomond', 'prigranichie_radar1', 'grohot_pgr',
     'kursk_nasv', 'mchs_46', 'patriot046', 'kursk_now', 'Hinshtein',
     'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
-    'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru',''
+    'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest',
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
@@ -284,7 +284,7 @@ async def send_news_to_user(bot_client, user_id, posts):
     try:
         await bot_client.send_message(
             user_id,
-            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 8 часов)**\n"
+            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 4 часа)**\n"
             f"🕒 *Актуально на:* {moscow_time} (МСК)\n"
             f"📈 *Новостей:* {len(posts)}\n"
             f"✅ *Без спама и повторов*\n"
@@ -352,23 +352,39 @@ async def main():
     
     @bot_client.on(events.NewMessage(pattern='/start'))
     async def start_handler(event):
+        # Проверка, что сообщение не от самого бота
+        if event.message.out:
+            return
+            
         user_id = event.chat_id
         add_subscriber(user_id)
         await event.reply("🎉 Вы подписались на новости! Рассылка в 9:00, 13:00 и 19:00 по МСК.")
     
     @bot_client.on(events.NewMessage(pattern='/stop'))
     async def stop_handler(event):
+        # Проверка, что сообщение не от самого бота
+        if event.message.out:
+            return
+            
         user_id = event.chat_id
         remove_subscriber(user_id)
         await event.reply("❌ Вы отписались от новостей")
     
     @bot_client.on(events.NewMessage(pattern='/stats'))
     async def stats_handler(event):
+        # Проверка, что сообщение не от самого бота
+        if event.message.out:
+            return
+            
         subscribers = load_subscribers()
         await event.reply(f"📊 Подписчиков: {len(subscribers)}")
     
     @bot_client.on(events.NewMessage(pattern='/news'))
     async def news_handler(event):
+        # Проверка, что сообщение не от самого бота
+        if event.message.out:
+            return
+            
         user_id = event.chat_id
         await event.reply("⏳ Ищу свежие новости за последние 4 часа...")
         all_news = await collect_news(user_client)
