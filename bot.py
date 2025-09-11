@@ -44,7 +44,7 @@ SPAM_PHRASES = [
 
 SPAM_URL_THRESHOLD = 2
 UNIQUE_WORDS_THRESHOLD = 5
-MAX_MESSAGE_AGE_HOURS = 4  # Новости за последние 4 часов
+MAX_MESSAGE_AGE_HOURS = 6  # Новости за последние 6 часов
 MAX_POSTS_PER_CHANNEL = 2  # Максимум 2 новости от одного канала
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -284,7 +284,7 @@ async def send_news_to_user(bot_client, user_id, posts):
     try:
         await bot_client.send_message(
             user_id,
-            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 4 часа)**\n"
+            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 6 часов)**\n"
             f"🕒 *Актуально на:* {moscow_time} (МСК)\n"
             f"📈 *Новостей:* {len(posts)}\n"
             f"✅ *Без спама и повторов*\n"
@@ -386,7 +386,7 @@ async def main():
             return
             
         user_id = event.chat_id
-        await event.reply("⏳ Ищу свежие новости за последние 4 часа...")
+        await event.reply("⏳ Ищу свежие новости за последние 6 часов...")
         all_news = await collect_news(user_client)
         await send_news_to_user(bot_client, user_id, all_news)
     
