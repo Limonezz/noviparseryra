@@ -40,8 +40,9 @@ SPAM_PHRASES = [
     'перейдите по ссылке', 'нажмите здесь', 'подпишитесь', 'кликните',
     'диплом', 'курсовая', 'накрутка', 'подписчиков', 'лайков',
     'заработок', 'инвестиции', 'криптовалюта', 'бинарные опционы',
-    'гарантия', 'результат', 'быстро', 'легко', 'выгодно', 'ракетная опасность', 'отбой', 'ракетной опасности',
+    'гарантия', 'результат', 'быстро', 'легко', 'выгодно', 'ракетная опасность', 'отбой', 'ракетной опасности', 'ОПАСНОСТЬ АТАКИ БПЛА', 'опасность атаки БПЛА', 'опасность атаки', 'отбой ракетной опасности', 'отбой опасности атаки БПЛА', 'ОТБОЙ опасности атаки БПЛА',
 ]
+
 
 SPAM_URL_THRESHOLD = 2
 UNIQUE_WORDS_THRESHOLD = 5
@@ -175,6 +176,7 @@ def init_db():
             channel TEXT,
             text TEXT,
             categories TEXT,
+            message_url TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -185,16 +187,20 @@ def is_post_sent(conn, post_id):
     cursor.execute("SELECT post_id FROM parsed_posts WHERE post_id = ?", (post_id,))
     return cursor.fetchone() is not None
 
-def mark_post_as_sent(conn, post_id, channel, text, categories):
+def mark_post_as_sent(conn, post_id, channel, text, categories, message_url):
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR IGNORE INTO parsed_posts (post_id, channel, text, categories) VALUES (?, ?, ?, ?)",
-        (post_id, channel, text, ','.join(categories) if categories else '')
+        "INSERT OR IGNORE INTO parsed_posts (post_id, channel, text, categories, message_url) VALUES (?, ?, ?, ?, ?)",
+        (post_id, channel, text, ','.join(categories) if categories else '', message_url)
     )
     conn.commit()
 
 def generate_post_id(channel_name, message_id):
     return f"{channel_name}_{message_id}"
+
+def generate_message_url(channel_username, message_id):
+    """Генерация ссылки на оригинальное сообщение"""
+    return f"https://t.me/{channel_username}/{message_id}"
 
 def should_send_news():
     """Проверка времени рассылки"""
@@ -302,26 +308,32 @@ async def parse_channel(user_client, channel_name, conn):
                 # Форматируем текст
                 formatted_text = format_message_text(post_text)
                 
-                # Красивое оформление сообщения
+                # Генерируем ссылку на оригинальное сообщение
+                message_url = generate_message_url(channel_name, message.id)
+                
+                # Красивое оформление сообщения с кликабельной ссылкой
                 formatted_channel = format_channel_name(channel_name)
                 message_time = message.date.astimezone(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')
                 
+                # Форматируем с кликабельной ссылкой
                 formatted_post = (
-                    f"✨ {formatted_channel}\n"
+                    f"✨ **[{formatted_channel}]({message_url})**\n"
                     f"🕒 {message_time}\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
                     f"{formatted_text}\n"
-                    f"━━━━━━━━━━━━━━━━━━━━"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🔗 [Открыть оригинал]({message_url})"
                 )
                 
                 new_posts.append({
                     'text': formatted_post,
                     'post_id': post_id,
                     'channel': channel_name,
-                    'categories': categories
+                    'categories': categories,
+                    'message_url': message_url
                 })
                 
-                mark_post_as_sent(conn, post_id, channel_name, message.text, categories)
+                mark_post_as_sent(conn, post_id, channel_name, message.text, categories, message_url)
                 posts_count += 1
                 
                 # Ограничиваем количество постов от одного канала
@@ -346,9 +358,9 @@ async def send_news_to_user(bot_client, user_id, posts):
         await bot_client.send_message(
             user_id,
             f"📰 **ДАЙДЖЕСТ НОВОСТЕЙ**\n"
-            f"⏰ *Актуально на:* {moscow_time} (МСК)\n"
-            f"📊 *Всего новостей:* {len(posts)}\n"
-            f"✅ *Проверено антиспам-фильтром*\n"
+            f"⏰ Актуально на: {moscow_time} (МСК)\n"
+            f"📊 Всего новостей: {len(posts)}\n"
+            f"✅ Проверено антиспам-фильтром\n"
             f"────────────────",
             parse_mode='md',
             link_preview=False  # Убираем превью ссылок
@@ -382,8 +394,8 @@ async def send_news_to_user(bot_client, user_id, posts):
             user_id,
             f"✅ **РАССЫЛКА ЗАВЕРШЕНА**\n"
             f"📅 Следующий выпуск в 9:00, 13:00 или 19:00 по МСК\n"
-            f"👥 *Каналов отслеживается:* {len(CHANNELS)}\n"
-            f"🛡️ *Фильтры:* спам, дубликаты, скам\n"
+            f"👥 Каналов отслеживается: {len(CHANNELS)}\n"
+            f"🛡️ Фильтры: спам, дубликаты, скам\n"
             f"────────────────",
             parse_mode='md',
             link_preview=False
@@ -468,10 +480,10 @@ async def main():
         await event.reply(
             "🎉 **Добро пожаловать в новостной дайджест!**\n\n"
             "✅ Вы успешно подписались на рассылку\n"
-            "⏰ *Время рассылки:* 9:00, 13:00, 19:00 (МСК)\n"
-            "📰 *Отслеживаем каналов:* 30+\n"
+            "⏰ Время рассылки: 9:00, 13:00, 19:00 (МСК)\n"
+            "📰 Отслеживаем каналов: 30+\n"
             "🛡️ *Фильтры:* антиспам, антискам, проверка дубликатов\n\n"
-            "✨ *Команды:*\n"
+            "✨ Команды:\n"
             "/news - получить свежие новости сейчас\n"
             "/stats - статистика подписчиков\n"
             "/stop - отписаться от рассылки",
