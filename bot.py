@@ -8,6 +8,7 @@ from telethon.sessions import StringSession
 import logging
 import re
 from collections import Counter
+import html
 
 # ===== КОНФИГУРАЦИЯ =====
 API_ID = '24826804'
@@ -39,7 +40,7 @@ SPAM_PHRASES = [
     'перейдите по ссылке', 'нажмите здесь', 'подпишитесь', 'кликните',
     'диплом', 'курсовая', 'накрутка', 'подписчиков', 'лайков',
     'заработок', 'инвестиции', 'криптовалюта', 'бинарные опционы',
-    'гарантия', 'результат', 'быстро', 'легко', 'выгодно'
+    'гарантия', 'результат', 'быстро', 'легко', 'выгодно', 'ракетная опасность'
 ]
 
 SPAM_URL_THRESHOLD = 2
@@ -214,11 +215,61 @@ def should_send_news():
         logger.error(f"Ошибка времени: {e}")
         return False
 
+def format_channel_name(channel_name):
+    """Форматирование названия канала"""
+    name_map = {
+        'gubernator_46': '👑 Губернатор 46',
+        'kursk_info46': '🏛️ Курск Инфо 46',
+        'Alekhin_Telega': '📊 Алехин Телега',
+        'rian_ru': '🇷🇺 РИА Новости',
+        'kursk_ak46': '🚨 Курск АК 46',
+        'zhest_kursk_146': '💥 Жест Курск',
+        'novosti_efir': '📺 Новости Эфир',
+        'kursk_tipich': '🏘️ Курск Типич',
+        'seymkursk': '⚖️ Сейм Курск',
+        'kursk_smi': '📰 Курск СМИ',
+        'kursk_russia': '🇷🇺 Курск Россия',
+        'belgorod01': '🏙️ Белгород 01',
+        'kurskadm': '🏢 Администрация Курска',
+        'incident46': '🚔 Инцидент 46',
+        'kurskbomond': '💎 Курск Бомонд',
+        'prigranichie_radar1': '🛡️ Приграничье Радар',
+        'grohot_pgr': '💣 Грохот ПГР',
+        'kursk_nasv': '👥 Курск НасВ',
+        'mchs_46': '🚒 МЧС 46',
+        'patriot046': '🇷🇺 Патриот 046',
+        'kursk_now': '⏰ Курск Сейчас',
+        'Hinshtein': '🕵️‍♂️ Хинштейн',
+        'incidentkursk': '🚓 Инцидент Курск',
+        'zhest_belgorod': '💥 Жест Белгород',
+        'RVvoenkor': '🎖️ Военкор РВ',
+        'pb_032': '🛡️ ПБ 032',
+        'tipicl32': '🏘️ Типичный 32',
+        'bryansk_smi': '📰 Брянск СМИ',
+        'Ria_novosti_rossiya': '🇷🇺 РИА Россия',
+        'criminalru': '🚨 Криминал РФ',
+        'bra_32': '🏙️ Брянск 32',
+        'br_gorod': '🏙️ Брянск Город',
+        'br_zhest': '💥 Брянск Жест'
+    }
+    return name_map.get(channel_name, f'📢 {channel_name}')
+
+def format_message_text(text):
+    """Форматирование текста сообщения"""
+    # Очищаем от лишних пробелов и переносов
+    text = re.sub(r'\n\s*\n', '\n\n', text.strip())
+    
+    # Обрезаем слишком длинные сообщения
+    if len(text) > 3800:
+        text = text[:3800] + "..."
+    
+    return text
+
 async def parse_channel(user_client, channel_name, conn):
     """Парсинг канала с фильтрацией"""
     try:
         logger.info(f"🔍 Парсим: {channel_name}")
-        messages = await user_client.get_messages(channel_name, limit=50)  # Увеличили лимит для поиска свежих
+        messages = await user_client.get_messages(channel_name, limit=50)
         new_posts = []
         posts_count = 0
         
@@ -239,7 +290,7 @@ async def parse_channel(user_client, channel_name, conn):
             post_id = generate_post_id(channel_name, message.id)
             
             if not is_post_sent(conn, post_id):
-                # Фильтр тематики - теперь принимаем все
+                # Фильтр тематики
                 is_relevant, categories = is_relevant_topic(post_text)
                 if not is_relevant:
                     continue
@@ -248,11 +299,20 @@ async def parse_channel(user_client, channel_name, conn):
                 if not is_message_unique(post_text):
                     continue
                 
-                if len(post_text) > 1000:
-                    post_text = post_text[:1000] + "..."
+                # Форматируем текст
+                formatted_text = format_message_text(post_text)
                 
-                # Форматирование
-                formatted_post = f"📢 **{channel_name}**\n\n{post_text}\n\n🕒 *Время:* {message.date.astimezone(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')}"
+                # Красивое оформление сообщения
+                formatted_channel = format_channel_name(channel_name)
+                message_time = message.date.astimezone(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')
+                
+                formatted_post = (
+                    f"✨ {formatted_channel}\n"
+                    f"🕒 {message_time}\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"{formatted_text}\n"
+                    f"━━━━━━━━━━━━━━━━━━━━"
+                )
                 
                 new_posts.append({
                     'text': formatted_post,
@@ -275,26 +335,59 @@ async def parse_channel(user_client, channel_name, conn):
         return []
 
 async def send_news_to_user(bot_client, user_id, posts):
-    """Отправка новостей"""
+    """Отправка новостей с красивым оформлением"""
     if not posts:
         return
     
     moscow_time = datetime.now(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')
     
     try:
+        # Красивое приветственное сообщение
         await bot_client.send_message(
             user_id,
-            f"📊 **СВЕЖИЕ НОВОСТИ (за последние 6 часов)**\n"
-            f"🕒 *Актуально на:* {moscow_time} (МСК)\n"
-            f"📈 *Новостей:* {len(posts)}\n"
-            f"✅ *Без спама и повторов*\n"
+            f"📰 **ДАЙДЖЕСТ НОВОСТЕЙ**\n"
+            f"⏰ *Актуально на:* {moscow_time} (МСК)\n"
+            f"📊 *Всего новостей:* {len(posts)}\n"
+            f"✅ *Проверено антиспам-фильтром*\n"
             f"────────────────",
-            parse_mode='md'
+            parse_mode='md',
+            link_preview=False  # Убираем превью ссылок
         )
         
-        for post in posts:
-            await bot_client.send_message(user_id, post['text'], parse_mode='md')
+        await asyncio.sleep(1)
+        
+        # Отправляем каждую новость с задержкой
+        for i, post in enumerate(posts, 1):
+            await bot_client.send_message(
+                user_id, 
+                post['text'], 
+                parse_mode='md',
+                link_preview=False  # Убираем превью ссылок
+            )
+            
+            # Добавляем разделитель между новостями, кроме последней
+            if i < len(posts):
+                await bot_client.send_message(
+                    user_id,
+                    "⬇️ **Следующая новость** ⬇️",
+                    parse_mode='md',
+                    link_preview=False
+                )
+                await asyncio.sleep(0.5)
+            
             await asyncio.sleep(1)
+        
+        # Футер с итогами
+        await bot_client.send_message(
+            user_id,
+            f"✅ **РАССЫЛКА ЗАВЕРШЕНА**\n"
+            f"📅 Следующий выпуск в 9:00, 13:00 или 19:00 по МСК\n"
+            f"👥 *Каналов отслеживается:* {len(CHANNELS)}\n"
+            f"🛡️ *Фильтры:* спам, дубликаты, скам\n"
+            f"────────────────",
+            parse_mode='md',
+            link_preview=False
+        )
             
     except Exception as e:
         logger.error(f"❌ Ошибка отправки {user_id}: {e}")
@@ -333,13 +426,28 @@ async def send_news_to_all_subscribers(user_client, bot_client):
     
     if not all_news:
         logger.info("📭 Нет новых новостей")
+        # Отправляем уведомление подписчикам, что новостей нет
+        for user_id in subscribers:
+            try:
+                await bot_client.send_message(
+                    user_id,
+                    f"📰 **СВЕЖИХ НОВОСТЕЙ НЕТ**\n"
+                    f"⏰ *Время проверки:* {datetime.now(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')}\n"
+                    f"ℹ️ За последние 6 часов новостей не обнаружено\n"
+                    f"✅ Антиспам-фильтр работает\n"
+                    f"────────────────",
+                    parse_mode='md',
+                    link_preview=False
+                )
+            except Exception as e:
+                logger.error(f"❌ Ошибка отправки {user_id}: {e}")
         return
     
     for user_id in subscribers:
         try:
             await send_news_to_user(bot_client, user_id, all_news)
             logger.info(f"✅ Отправлено {user_id}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)  # Увеличиваем задержку между пользователями
         except Exception as e:
             logger.error(f"❌ Ошибка отправки {user_id}: {e}")
     
@@ -352,41 +460,67 @@ async def main():
     
     @bot_client.on(events.NewMessage(pattern='/start'))
     async def start_handler(event):
-        # Проверка, что сообщение не от самого бота
         if event.message.out:
             return
             
         user_id = event.chat_id
         add_subscriber(user_id)
-        await event.reply("🎉 Вы подписались на новости! Рассылка в 9:00, 13:00 и 19:00 по МСК.")
+        await event.reply(
+            "🎉 **Добро пожаловать в новостной дайджест!**\n\n"
+            "✅ Вы успешно подписались на рассылку\n"
+            "⏰ *Время рассылки:* 9:00, 13:00, 19:00 (МСК)\n"
+            "📰 *Отслеживаем каналов:* 30+\n"
+            "🛡️ *Фильтры:* антиспам, антискам, проверка дубликатов\n\n"
+            "✨ *Команды:*\n"
+            "/news - получить свежие новости сейчас\n"
+            "/stats - статистика подписчиков\n"
+            "/stop - отписаться от рассылки",
+            parse_mode='md',
+            link_preview=False
+        )
     
     @bot_client.on(events.NewMessage(pattern='/stop'))
     async def stop_handler(event):
-        # Проверка, что сообщение не от самого бота
         if event.message.out:
             return
             
         user_id = event.chat_id
         remove_subscriber(user_id)
-        await event.reply("❌ Вы отписались от новостей")
+        await event.reply(
+            "❌ **Вы отписались от рассылки**\n\n"
+            "Если передумаете - просто напишите /start",
+            parse_mode='md',
+            link_preview=False
+        )
     
     @bot_client.on(events.NewMessage(pattern='/stats'))
     async def stats_handler(event):
-        # Проверка, что сообщение не от самого бота
         if event.message.out:
             return
             
         subscribers = load_subscribers()
-        await event.reply(f"📊 Подписчиков: {len(subscribers)}")
+        await event.reply(
+            f"📊 **СТАТИСТИКА СИСТЕМЫ**\n\n"
+            f"👥 *Подписчиков:* {len(subscribers)}\n"
+            f"📰 *Отслеживаемых каналов:* {len(CHANNELS)}\n"
+            f"⏰ *Следующая рассылка:* 9:00, 13:00 или 19:00 МСК\n"
+            f"🛡️ *Фильтры активны:* да",
+            parse_mode='md',
+            link_preview=False
+        )
     
     @bot_client.on(events.NewMessage(pattern='/news'))
     async def news_handler(event):
-        # Проверка, что сообщение не от самого бота
         if event.message.out:
             return
             
         user_id = event.chat_id
-        await event.reply("⏳ Ищу свежие новости за последние 6 часов...")
+        await event.reply(
+            "⏳ **Ищем свежие новости...**\n"
+            "Проверяем последние 6 часов по всем каналам",
+            parse_mode='md',
+            link_preview=False
+        )
         all_news = await collect_news(user_client)
         await send_news_to_user(bot_client, user_id, all_news)
     
