@@ -24,6 +24,7 @@ CHANNELS = [
     'kursk_nasv', 'mchs_46', 'patriot046', 'kursk_now', 'Hinshtein',
     'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
     'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest', 'pravdas', 'wargonzo', 'ploschadmedia', 
+    'belgorod_smi','ssigny','rucriminalinfo','kurskiy_harakter','dva_majors','ENews112','mash'
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
