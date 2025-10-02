@@ -7,7 +7,7 @@ from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 import logging
 import re
-from collections import Counter
+from collections import Counter 
 import html
 
 # ===== КОНФИГУРАЦИЯ =====
@@ -23,7 +23,7 @@ CHANNELS = [
     'incident46', 'kurskbomond', 'prigranichie_radar1', 'grohot_pgr',
     'kursk_nasv', 'mchs_46', 'patriot046', 'kursk_now', 'Hinshtein',
     'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
-    'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest',
+    'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest', 'pravdas', 'wargonzo', 'ploschadmedia', 
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
