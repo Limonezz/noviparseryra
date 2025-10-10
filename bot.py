@@ -544,6 +544,16 @@ async def send_news_to_all_subscribers(user_client, bot_client):
     
     logger.info(f"✅ Рассылка завершена")
 
+def get_channels_list():
+    """Получение списка каналов с форматированием"""
+    channels_info = []
+    for i, channel in enumerate(CHANNELS, 1):
+        formatted_name = format_channel_name(channel)
+        channel_url = generate_channel_url(channel)
+        channels_info.append(f"{i}. **[{formatted_name}]({channel_url})**\n   └── `{channel}`")
+    
+    return channels_info
+
 # ===== ОСНОВНАЯ ФУНКЦИЯ =====
 async def main():
     user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
@@ -620,6 +630,37 @@ async def main():
         all_news = await collect_news(user_client)
         await send_news_to_user(bot_client, user_id, all_news)
     
+    @bot_client.on(events.NewMessage(pattern='/channels'))
+    async def channels_handler(event):
+        """Секретная команда - список всех отслеживаемых каналов"""
+        if event.message.out:
+            return
+            
+        user_id = event.chat_id
+        logger.info(f"🔧 Пользователь {user_id} запросил список каналов")
+        
+        channels_info = get_channels_list()
+        
+        # Разбиваем на части, чтобы не превысить лимит длины сообщения
+        chunk_size = 20
+        for i in range(0, len(channels_info), chunk_size):
+            chunk = channels_info[i:i + chunk_size]
+            message_text = (
+                f"🔧 **СИСТЕМНАЯ ИНФОРМАЦИЯ**\n\n"
+                f"📊 Всего каналов: {len(CHANNELS)}\n"
+                f"📝 Сообщений проверяется: {MESSAGES_PER_CHANNEL} с канала\n"
+                f"⏰ Возраст новостей: до {MAX_MESSAGE_AGE_HOURS} часов\n\n"
+                f"📋 **ОТСЛЕЖИВАЕМЫЕ КАНАЛЫ** ({i+1}-{min(i+chunk_size, len(CHANNELS))}):\n\n" +
+                "\n\n".join(chunk)
+            )
+            
+            await event.reply(
+                message_text,
+                parse_mode='md',
+                link_preview=False
+            )
+            await asyncio.sleep(1)
+    
     try:
         await user_client.start()
         await bot_client.start(bot_token=BOT_TOKEN)
@@ -631,6 +672,7 @@ async def main():
         logger.info(f"🛑 ФИЛЬТР ОПАСНОСТЕЙ: включен (не показываем ракетные/авиационные тревоги)")
         logger.info(f"🔍 Важные ключевые слова: {len(IMPORTANT_KEYWORDS)} фраз")
         logger.info(f"✅ ОСЛАБЛЕННЫЙ ФИЛЬТР: разрешены ссылки на предложки")
+        logger.info(f"🔧 Секретная команда /channels доступна")
         
         while True:
             if should_send_news():
