@@ -84,6 +84,29 @@ WEBSITES = [
         'link_selector': 'a',
         'date_selector': '.sc-7586c7b3-1',
         'base_url': 'https://www.kp.ru'
+    },
+    # Новые сайты
+    {
+        'name': 'Белгородские новости',
+        'url': 'https://bel.ru/',
+        'type': 'html',
+        'selector': '.b-news-item, .news-item, .b-article-item',
+        'title_selector': '.b-news-item__title, .news-title, h2 a',
+        'link_selector': 'a',
+        'date_selector': '.b-news-item__date, .news-date, time',
+        'base_url': 'https://bel.ru',
+        'custom_parser': 'bel_ru'
+    },
+    {
+        'name': 'Прокуратура ДВФО',
+        'url': 'https://epp.genproc.gov.ru/web/proc_dvfo',
+        'type': 'html', 
+        'selector': 'table.table_style1 tr, .newsLine, .documentLine',
+        'title_selector': 'a, .title',
+        'link_selector': 'a',
+        'date_selector': 'td:nth-child(2), .date',
+        'base_url': 'https://epp.genproc.gov.ru',
+        'custom_parser': 'proc_dvfo'
     }
 ]
 
@@ -388,6 +411,123 @@ def format_message_text(text):
     
     return text
 
+# ===== КАСТОМНЫЕ ПАРСЕРЫ ДЛЯ НОВЫХ САЙТОВ =====
+
+async def parse_bel_ru(html_content, website_config):
+    """Кастомный парсер для bel.ru"""
+    try:
+        soup = BeautifulSoup(html_content, 'lxml')
+        articles = []
+        
+        # Ищем новостные блоки
+        news_items = soup.select('.b-news-item, .news-item, .b-article-item')
+        
+        for item in news_items[:15]:
+            try:
+                # Заголовок
+                title_elem = item.select_one('.b-news-item__title, .news-title, h2, h3')
+                if not title_elem:
+                    continue
+                title = title_elem.get_text(strip=True)
+                
+                if len(title) < 10:
+                    continue
+                
+                # Ссылка
+                link_elem = item.select_one('a')
+                if link_elem and link_elem.get('href'):
+                    link = link_elem['href']
+                    if link.startswith('/'):
+                        link = website_config['base_url'] + link
+                    if not link.startswith('http'):
+                        continue
+                else:
+                    continue
+                
+                # Дата
+                date_elem = item.select_one('.b-news-item__date, .news-date, time')
+                date = date_elem.get_text(strip=True) if date_elem else "Сегодня"
+                
+                if contains_keywords(title):
+                    articles.append({
+                        'title': title,
+                        'link': link,
+                        'date': date,
+                        'source': website_config['name'],
+                        'text': title,
+                        'type': 'website'
+                    })
+                    
+            except Exception as e:
+                logger.error(f"❌ Ошибка парсинга bel.ru элемента: {e}")
+                continue
+                
+        return articles
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка парсинга bel.ru: {e}")
+        return []
+
+async def parse_proc_dvfo(html_content, website_config):
+    """Кастомный парсер для прокуратуры ДВФО"""
+    try:
+        soup = BeautifulSoup(html_content, 'lxml')
+        articles = []
+        
+        # Ищем таблицы с новостями или списки
+        news_rows = soup.select('table.table_style1 tr, .newsLine, .documentLine')
+        
+        for row in news_rows[:20]:
+            try:
+                # Пропускаем заголовки таблиц
+                if not row.select('a'):
+                    continue
+                    
+                # Заголовок из ссылки
+                link_elem = row.select_one('a')
+                if not link_elem:
+                    continue
+                    
+                title = link_elem.get_text(strip=True)
+                if len(title) < 10:
+                    continue
+                
+                # Ссылка
+                link = link_elem.get('href')
+                if link:
+                    if link.startswith('/'):
+                        link = website_config['base_url'] + link
+                    elif link.startswith('./'):
+                        link = website_config['url'] + link[1:]
+                    if not link.startswith('http'):
+                        continue
+                else:
+                    continue
+                
+                # Дата (обычно во втором столбце таблицы)
+                date_elem = row.select_one('td:nth-child(2), .date')
+                date = date_elem.get_text(strip=True) if date_elem else "Сегодня"
+                
+                if contains_keywords(title):
+                    articles.append({
+                        'title': title,
+                        'link': link,
+                        'date': date,
+                        'source': website_config['name'],
+                        'text': title,
+                        'type': 'website'
+                    })
+                    
+            except Exception as e:
+                logger.error(f"❌ Ошибка парсинга proc_dvfo элемента: {e}")
+                continue
+                
+        return articles
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка парсинга proc_dvfo: {e}")
+        return []
+
 # ===== ФУНКЦИИ ДЛЯ ПАРСИНГА САЙТОВ =====
 
 async def fetch_website(session, website_config):
@@ -411,6 +551,15 @@ async def fetch_website(session, website_config):
 async def parse_website_content(html_content, website_config):
     """Парсинг содержимого веб-сайта через HTML"""
     try:
+        # Проверяем наличие кастомного парсера
+        custom_parser = website_config.get('custom_parser')
+        if custom_parser:
+            if custom_parser == 'bel_ru':
+                return await parse_bel_ru(html_content, website_config)
+            elif custom_parser == 'proc_dvfo':
+                return await parse_proc_dvfo(html_content, website_config)
+        
+        # Стандартный парсинг для остальных сайтов
         soup = BeautifulSoup(html_content, 'lxml')
         articles = []
         
