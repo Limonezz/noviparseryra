@@ -25,7 +25,6 @@ CHANNELS = [
     'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
     'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest', 'pravdas', 'wargonzo', 'ploschadmedia', 
     'belgorod_smi','ssigny','rucriminalinfo','kurskiy_harakter','dva_majors','ENews112','mash',
-    # NewsRussias7 удален из списка
 ]
 
 # ===== КЛЮЧЕВЫЕ СЛОВА ДЛЯ ФИЛЬТРАЦИИ =====
@@ -561,4 +560,14 @@ async def main():
         
         # Бесконечный цикл для поддержания работы бота
         while True:
-            await asyncio.sleep(3600) 
+            await asyncio.sleep(3600)  # Спим 1 час и продолжаем
+
+    except Exception as e:
+        logger.error(f"💥 Ошибка: {e}")
+    finally:
+        await user_client.disconnect()
+        await bot_client.disconnect()
+        db_conn.close()
+
+if __name__ == '__main__':
+    asyncio.run(main())
