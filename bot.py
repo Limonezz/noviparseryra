@@ -1,6 +1,3 @@
-Вот полностью переработанный код, который соответствует вашим требованиям:
-
-```python
 import asyncio
 import sqlite3
 import os
@@ -564,4 +561,4 @@ async def main():
         
         # Бесконечный цикл для поддержания работы бота
         while True:
-            await asyncio.sleep(3600)
+            await asyncio.sleep(3600) 
