@@ -20,7 +20,7 @@ API_HASH = '048e59c243cce6ff788a7da214bf8119'
 SESSION_STRING = "1ApWapzMBuy-exPfF7z634N4Gos8qEwxZ92Nj1r4PWBEd55yqbaP_jcaTT6RiRwd5N4k2snlw_NaVLZ_2C4AvxvB_UG_exIrWgIOj6wsZrHlvBKt92xsGsEbZeo3l95d_6Vr5KKgWaxw531DwOrtWH-lerhkJ7XlDWtt_c225I7W0lIAk8P_k6gzm5oGvRFXqe0ivHxU7q4sJz6V61Ca0jyA_Sv-74OxB9l07HmIbOAC66oCtekxj4G5MTKKudofzmu2IqjqTgfFHwnKzE6hA3qik1SqSWdtWvmXHGb_44qPSk2dWGdW7vsN8inFuByDQLCF1_VLdGe0aFohbN0TXKKi7k0C8g2I="
 BOT_TOKEN = '7597923417:AAEyZvTyyrPFQDz1o1qURDeCEoBFc0fMWaY'
 
-# Telegram каналы (убрал проблемный канал)
+# Telegram каналы
 CHANNELS = [
     'gubernator_46', 'kursk_info46', 'Alekhin_Telega', 'rian_ru',
     'kursk_ak46', 'zhest_kursk_146', 'novosti_efir', 'kursk_tipich',
@@ -30,7 +30,6 @@ CHANNELS = [
     'incidentkursk', 'zhest_belgorod', 'RVvoenkor', 'pb_032',
     'tipicl32', 'bryansk_smi', 'Ria_novosti_rossiya','criminalru','bra_32','br_gorod','br_zhest', 'pravdas', 'wargonzo', 'ploschadmedia', 
     'belgorod_smi','ssigny','rucriminalinfo','kurskiy_harakter','dva_majors','ENews112',
-    # Убрал 'mash' из-за ошибок
 ]
 
 # Веб-сайты для парсинга
@@ -54,61 +53,6 @@ WEBSITES = [
         'type': 'rss',
         'base_url': 'https://aif.ru'
     },
-    # Rambler через прямой парсинг (у них сложная структура RSS)
-    {
-        'name': 'Рамблер/новости',
-        'url': 'https://news.rambler.ru/',
-        'type': 'html',
-        'selector': '.news-card',
-        'title_selector': '.news-card__title',
-        'link_selector': '.news-card__link',
-        'date_selector': '.news-card__date',
-        'base_url': 'https://news.rambler.ru'
-    },
-    # Дополнительные сайты через HTML парсинг
-    {
-        'name': 'РИА Новости',
-        'url': 'https://ria.ru/',
-        'type': 'html',
-        'selector': '.list-item',
-        'title_selector': '.list-item__title',
-        'link_selector': '.list-item__image',
-        'date_selector': '.list-item__date',
-        'base_url': 'https://ria.ru'
-    },
-    {
-        'name': 'Комсомольская правда',
-        'url': 'https://www.kp.ru/',
-        'type': 'html', 
-        'selector': '.sc-7586c7b3-0',
-        'title_selector': '.sc-7586c7b3-2',
-        'link_selector': 'a',
-        'date_selector': '.sc-7586c7b3-1',
-        'base_url': 'https://www.kp.ru'
-    },
-    # Новые сайты
-    {
-        'name': 'Белгородские новости',
-        'url': 'https://bel.ru/',
-        'type': 'html',
-        'selector': '.b-news-item, .news-item, .b-article-item',
-        'title_selector': '.b-news-item__title, .news-title, h2 a',
-        'link_selector': 'a',
-        'date_selector': '.b-news-item__date, .news-date, time',
-        'base_url': 'https://bel.ru',
-        'custom_parser': 'bel_ru'
-    },
-    {
-        'name': 'Прокуратура ДВФО',
-        'url': 'https://epp.genproc.gov.ru/web/proc_dvfo',
-        'type': 'html', 
-        'selector': 'table.table_style1 tr, .newsLine, .documentLine',
-        'title_selector': 'a, .title',
-        'link_selector': 'a',
-        'date_selector': 'td:nth-child(2), .date',
-        'base_url': 'https://epp.genproc.gov.ru',
-        'custom_parser': 'proc_dvfo'
-    }
 ]
 
 # ===== КЛЮЧЕВЫЕ СЛОВА ДЛЯ ФИЛЬТРАЦИИ =====
@@ -124,9 +68,6 @@ KEYWORDS = [
     'администрация', 'Госдума', 'Совет Федерации', 'законопроект', 'законодательство',
     'выборы', 'мэр', 'санкции', 'переговоры', 'дипломатия', 'международные отношения',
     'саммит', 'встречи', 'партия', 'Единая Россия', 'оппозиция', 'иноагент',
-    'патриотизм', 'суверенитет', 'интеграция', 'сотрудничество', 'внешняя политика',
-    'федеральный бюджет', 'указы', 'распоряжения', 'политическое давление',
-    'кадровые перестановки', 'лоббирование', 'государственные интересы',
     
     # Экономика и коррупция
     'бюджет', 'финансирование', 'контракт', 'госконтракт', 'тендер', 'аукцион',
@@ -135,22 +76,17 @@ KEYWORDS = [
     'имущество', 'арест имущества', 'конфискация', 'отмывание денег', 'схема',
     'махинации', 'хищение', 'растрата', 'взятка', 'откат', 'коррупция',
     'злоупотребление полномочиями', 'служебный подлог', 'мошенничество',
-    'фальсификация', 'подделка документов', 'банковские операции', 'криптовалюта',
-    'экономический кризис', 'инфляция', 'недвижимость', 'фондовый рынок',
     
     # Строительство и инфраструктура
     'строительство', 'реконструкция', 'благоустройство', 'инфраструктура',
     'транспорт', 'дороги', 'энергетика', 'капремонт', 'объект', 'сооружение',
     'подрядчик', 'заказчик', 'смета', 'стоимость', 'сроки строительства',
-    'нарушение сроков', 'приемка объектов', 'социальные объекты', 'больницы',
-    'школы', 'очистные сооружения', 'мемориальный комплекс', 'жилье', 'квартиры',
     
     # Происшествия
     'авария', 'катастрофа', 'обрушение', 'разрушение', 'взрыв', 'детонация',
     'несчастный случай', 'травма', 'гибель', 'пострадавшие', 'больница', 'госпиталь',
     'полиция', 'правоохранители', 'уголовное дело', 'задержание', 'арест', 'суд',
     'судебное заседание', 'приговор', 'колония', 'СИЗО', 'следствие', 'дознание',
-    'прокурор', 'следователь', 'обвиняемый', 'подозреваемый', 'доказательства', 'улики',
     
     # География
     'Курск', 'Курская область', 'Брянск', 'Брянская область', 'Белгород',
@@ -163,7 +99,6 @@ KEYWORDS = [
     'США', 'Вашингтон', 'Китай', 'Пекин', 'Украина', 'Киев', 'НАТО', 'альянс',
     'ЕС', 'Европейский союз', 'ШОС', 'БРИКС', 'ООН', 'Совет Безопасности',
     'Турция', 'Германия', 'Франция', 'Польша', 'страны Балтии', 'санкции',
-    'дипломатия', 'международные договоры', 'гарантии безопасности',
     
     # Общество
     'образование', 'школы', 'здравоохранение', 'больницы', 'общественные организации',
@@ -173,20 +108,11 @@ KEYWORDS = [
     'АЭС', 'атомная станция', 'Курская АЭС-2', 'Нововоронежская АЭС', 'электроэнергия',
     'газ', 'нефть', 'нефтепереработка', 'промышленность', 'оборонный заказ',
     'военно-промышленный комплекс', 'импортозамещение', 'технологии', 'инновации',
-    
-    # Транспорт и связь
-    'транспорт', 'дороги', 'железная дорога', 'мобильная связь', 'интернет',
-    'глушилки', 'подавление сигнала', 'спутниковая связь', 'логистика', 'поставки'
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
 
 # Фильтр спама и скама
-SPAM_DOMAINS = [
-    'ordershunter.ru', 'premium_gift', 'telegram-premium', 'free-telegram',
-    'nakrutka', 'followers', 'likes', 'diplom', 'kursovaya', 'zarabotok'
-]
-
 SPAM_PHRASES = [
     'get free', 'бесплатно', 'получите бесплатно', 'закажите сейчас',
     'скидка', 'акция', 'промокод', 'купить', 'продать', 'заказать',
@@ -224,7 +150,6 @@ SPAM_PHRASES = [
 ]
 
 SPAM_URL_THRESHOLD = 3
-UNIQUE_WORDS_THRESHOLD = 5
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -261,6 +186,9 @@ def remove_subscriber(user_id):
 # ===== ФУНКЦИИ ФИЛЬТРАЦИИ =====
 def contains_keywords(text):
     """Проверяет, содержит ли текст ключевые слова"""
+    if not text:
+        return False
+        
     text_lower = text.lower()
     for keyword in KEYWORDS:
         if keyword.lower() in text_lower:
@@ -269,18 +197,15 @@ def contains_keywords(text):
 
 def is_spam_message(text):
     """Проверка на спам и скам"""
+    if not text:
+        return True
+        
     text_lower = text.lower()
     
     # Проверка спам-фраз
     for phrase in SPAM_PHRASES:
         if phrase in text_lower:
             logger.info(f"🚫 Спам-фраза: {phrase}")
-            return True
-    
-    # Проверка спам-доменов
-    for domain in SPAM_DOMAINS:
-        if domain in text_lower:
-            logger.info(f"🚫 Спам-домен: {domain}")
             return True
     
     # Проверка количества ссылок (кроме telegram ссылок)
@@ -307,6 +232,9 @@ def is_spam_message(text):
 
 def is_relevant_topic(text):
     """Проверка тематики по ключевым словам"""
+    if not text:
+        return False, []
+        
     if contains_keywords(text):
         logger.info("✅ Сообщение содержит ключевые слова")
         return True, ['новости']
@@ -397,12 +325,14 @@ def format_channel_name(channel_name):
         'kurskiy_harakter': 'Курский характер',
         'dva_majors': 'Два майора',
         'ENews112': '112',
-        'mash': 'Mash'
     }
     return name_map.get(channel_name, f'📢 {channel_name}')
 
 def format_message_text(text):
     """Форматирование текста сообщения"""
+    if not text:
+        return ""
+        
     # Очищаем от лишних пробелов и переносов
     text = re.sub(r'\n\s*\n', '\n\n', text.strip())
     
@@ -412,219 +342,15 @@ def format_message_text(text):
     
     return text
 
-# ===== КАСТОМНЫЕ ПАРСЕРЫ ДЛЯ НОВЫХ САЙТОВ =====
-
-async def parse_bel_ru(html_content, website_config):
-    """Кастомный парсер для bel.ru"""
-    try:
-        soup = BeautifulSoup(html_content, 'lxml')
-        articles = []
-        
-        # Ищем новостные блоки
-        news_items = soup.select('.b-news-item, .news-item, .b-article-item')
-        
-        for item in news_items[:15]:
-            try:
-                # Заголовок
-                title_elem = item.select_one('.b-news-item__title, .news-title, h2, h3')
-                if not title_elem:
-                    continue
-                title = title_elem.get_text(strip=True)
-                
-                if len(title) < 10:
-                    continue
-                
-                # Ссылка
-                link_elem = item.select_one('a')
-                if link_elem and link_elem.get('href'):
-                    link = link_elem['href']
-                    if link.startswith('/'):
-                        link = website_config['base_url'] + link
-                    if not link.startswith('http'):
-                        continue
-                else:
-                    continue
-                
-                # Дата
-                date_elem = item.select_one('.b-news-item__date, .news-date, time')
-                date = date_elem.get_text(strip=True) if date_elem else "Сегодня"
-                
-                if contains_keywords(title):
-                    articles.append({
-                        'title': title,
-                        'link': link,
-                        'date': date,
-                        'source': website_config['name'],
-                        'text': title,
-                        'type': 'website'
-                    })
-                    
-            except Exception as e:
-                logger.error(f"❌ Ошибка парсинга bel.ru элемента: {e}")
-                continue
-                
-        return articles
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка парсинга bel.ru: {e}")
-        return []
-
-async def parse_proc_dvfo(html_content, website_config):
-    """Кастомный парсер для прокуратуры ДВФО"""
-    try:
-        soup = BeautifulSoup(html_content, 'lxml')
-        articles = []
-        
-        # Ищем таблицы с новостями или списки
-        news_rows = soup.select('table.table_style1 tr, .newsLine, .documentLine')
-        
-        for row in news_rows[:20]:
-            try:
-                # Пропускаем заголовки таблиц
-                if not row.select('a'):
-                    continue
-                    
-                # Заголовок из ссылки
-                link_elem = row.select_one('a')
-                if not link_elem:
-                    continue
-                    
-                title = link_elem.get_text(strip=True)
-                if len(title) < 10:
-                    continue
-                
-                # Ссылка
-                link = link_elem.get('href')
-                if link:
-                    if link.startswith('/'):
-                        link = website_config['base_url'] + link
-                    elif link.startswith('./'):
-                        link = website_config['url'] + link[1:]
-                    if not link.startswith('http'):
-                        continue
-                else:
-                    continue
-                
-                # Дата (обычно во втором столбце таблицы)
-                date_elem = row.select_one('td:nth-child(2), .date')
-                date = date_elem.get_text(strip=True) if date_elem else "Сегодня"
-                
-                if contains_keywords(title):
-                    articles.append({
-                        'title': title,
-                        'link': link,
-                        'date': date,
-                        'source': website_config['name'],
-                        'text': title,
-                        'type': 'website'
-                    })
-                    
-            except Exception as e:
-                logger.error(f"❌ Ошибка парсинга proc_dvfo элемента: {e}")
-                continue
-                
-        return articles
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка парсинга proc_dvfo: {e}")
-        return []
-
 # ===== ФУНКЦИИ ДЛЯ ПАРСИНГА САЙТОВ =====
-
-async def fetch_website(session, website_config):
-    """Получение и парсинг веб-сайта через HTML"""
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        async with session.get(website_config['url'], headers=headers, timeout=30) as response:
-            if response.status == 200:
-                html_content = await response.text()
-                return await parse_website_content(html_content, website_config)
-            else:
-                logger.error(f"❌ Ошибка {website_config['name']}: статус {response.status}")
-                return []
-    except Exception as e:
-        logger.error(f"❌ Ошибка парсинга {website_config['name']}: {e}")
-        return []
-
-async def parse_website_content(html_content, website_config):
-    """Парсинг содержимого веб-сайта через HTML"""
-    try:
-        # Проверяем наличие кастомного парсера
-        custom_parser = website_config.get('custom_parser')
-        if custom_parser:
-            if custom_parser == 'bel_ru':
-                return await parse_bel_ru(html_content, website_config)
-            elif custom_parser == 'proc_dvfo':
-                return await parse_proc_dvfo(html_content, website_config)
-        
-        # Стандартный парсинг для остальных сайтов
-        soup = BeautifulSoup(html_content, 'lxml')
-        articles = []
-        
-        # Ищем статьи по CSS селектору
-        news_items = soup.select(website_config['selector'])
-        
-        for item in news_items[:15]:  # Берем первые 15 статей
-            try:
-                # Извлекаем заголовок
-                title_element = item.select_one(website_config['title_selector'])
-                if not title_element:
-                    continue
-                    
-                title = title_element.get_text(strip=True)
-                if not title or len(title) < 10:
-                    continue
-                
-                # Извлекаем ссылку
-                link_element = item.select_one(website_config['link_selector'])
-                if link_element and link_element.get('href'):
-                    link = link_element['href']
-                    if link.startswith('/'):
-                        link = website_config['base_url'] + link
-                    # Проверяем, что это валидная ссылка
-                    if not link.startswith('http'):
-                        continue
-                else:
-                    continue
-                
-                # Извлекаем дату
-                date_element = item.select_one(website_config['date_selector'])
-                date = date_element.get_text(strip=True) if date_element else "Сегодня"
-                
-                # Проверяем релевантность по ключевым словам
-                if contains_keywords(title):
-                    articles.append({
-                        'title': title,
-                        'link': link,
-                        'date': date,
-                        'source': website_config['name'],
-                        'text': title,
-                        'type': 'website'
-                    })
-                    
-            except Exception as e:
-                logger.error(f"❌ Ошибка парсинга элемента: {e}")
-                continue
-                
-        return articles
-        
-    except Exception as e:
-        logger.error(f"❌ Ошибка парсинга {website_config['name']}: {e}")
-        return []
 
 async def parse_rss_feed(website_config):
     """Парсинг RSS-ленты"""
     try:
-        import feedparser
-        
-        # Используем feedparser для парсинга RSS
         feed = feedparser.parse(website_config['url'])
         articles = []
         
-        for entry in feed.entries[:20]:  # Берем 20 последних записей
+        for entry in feed.entries[:10]:  # Берем 10 последних записей
             try:
                 title = entry.title
                 link = entry.link
@@ -671,17 +397,14 @@ async def check_websites(session, conn, bot_client):
             try:
                 if website.get('type') == 'rss':
                     articles = await parse_rss_feed(website)
-                else:
-                    articles = await fetch_website(session, website)
-                
-                all_articles.extend(articles)
-                logger.info(f"✅ Найдено статей на {website['name']}: {len(articles)}")
+                    all_articles.extend(articles)
+                    logger.info(f"✅ Найдено статей на {website['name']}: {len(articles)}")
                 
             except Exception as e:
                 logger.error(f"❌ Ошибка при проверке {website['name']}: {e}")
                 continue
                 
-            await asyncio.sleep(2)  # Задержка между запросами
+            await asyncio.sleep(1)  # Задержка между запросами
         
         # Фильтруем и отправляем новые статьи
         await process_website_articles(conn, bot_client, all_articles)
@@ -700,6 +423,11 @@ async def process_website_articles(conn, bot_client, articles):
             
             # Проверяем, не отправляли ли уже эту статью
             if is_post_sent(conn, article_id):
+                continue
+            
+            # Дополнительная проверка на спам для статей с сайтов
+            if is_spam_message(article['title']) or is_spam_message(article['text']):
+                logger.info(f"🚫 Статья с сайта отфильтрована как спам: {article['title'][:50]}...")
                 continue
             
             # Форматируем сообщение для отправки
@@ -752,17 +480,21 @@ def format_website_article(article):
 
 # ===== ОБРАБОТКА TELEGRAM СООБЩЕНИЙ =====
 
-async def process_new_message(user_client, bot_client, conn, message):
+async def process_new_message(event, bot_client, conn):
     """Обработка нового сообщения и мгновенная рассылка"""
     try:
+        message = event.message
         if not message.text or not message.text.strip():
             return False
             
         post_text = message.text.strip()
         channel_name = message.chat.username if message.chat.username else message.chat.title
         
+        logger.info(f"📨 Новое сообщение из {channel_name}: {post_text[:100]}...")
+        
         # Фильтр спама
         if is_spam_message(post_text):
+            logger.info(f"🚫 Сообщение из {channel_name} отфильтровано как спам")
             return False
         
         # Фильтр тематики по ключевым словам
@@ -774,6 +506,7 @@ async def process_new_message(user_client, bot_client, conn, message):
         
         # Проверяем, не отправляли ли уже это сообщение
         if is_post_sent(conn, post_id):
+            logger.info(f"ℹ️ Сообщение из {channel_name} уже было отправлено")
             return False
         
         # Форматируем текст
@@ -889,7 +622,7 @@ async def main():
             return
             
         subscribers = load_subscribers()
-        website_count = len([w for w in WEBSITES if w.get('type') == 'rss']) + len([w for w in WEBSITES if w.get('type') == 'html'])
+        website_count = len([w for w in WEBSITES if w.get('type') == 'rss'])
         
         await event.reply(
             f"📊 **СТАТИСТИКА СИСТЕМЫ**\n\n"
@@ -917,35 +650,11 @@ async def main():
             link_preview=False
         )
     
-    # Функция для безопасной обработки каналов
-    async def safe_get_entity(client, channel_name):
-        try:
-            entity = await client.get_entity(channel_name)
-            return entity
-        except Exception as e:
-            logger.error(f"❌ Ошибка доступа к каналу {channel_name}: {e}")
-            return None
-    
-    async def setup_channels():
-        """Настройка каналов с обработкой ошибок"""
-        valid_channels = []
-        for channel in CHANNELS:
-            entity = await safe_get_entity(user_client, channel)
-            if entity:
-                valid_channels.append(entity)
-                logger.info(f"✅ Канал {channel} доступен")
-            else:
-                logger.warning(f"⚠️ Канал {channel} недоступен, пропускаем")
-        
-        return valid_channels
-    
-    # Устанавливаем обработчики для валидных каналов
-    valid_channels = await setup_channels()
-    
-    @user_client.on(events.NewMessage(chats=valid_channels))
-    async def instant_news_handler(event):
+    # Обработчик для Telegram каналов
+    @user_client.on(events.NewMessage(chats=CHANNELS))
+    async def telegram_channel_handler(event):
         """Обработчик новых сообщений из отслеживаемых каналов"""
-        await process_new_message(user_client, bot_client, db_conn, event.message)
+        await process_new_message(event, bot_client, db_conn)
     
     async def website_checker():
         """Фоновая задача для проверки сайтов"""
@@ -966,7 +675,7 @@ async def main():
         
         subscribers_count = len(load_subscribers())
         logger.info("✅ Бот запущен в режиме мгновенных уведомлений")
-        logger.info(f"📰 Отслеживается Telegram каналов: {len(valid_channels)}/{len(CHANNELS)}")
+        logger.info(f"📰 Отслеживается Telegram каналов: {len(CHANNELS)}")
         logger.info(f"🌐 Отслеживается веб-сайтов: {len(WEBSITES)}")
         logger.info(f"🔍 Ключевых слов для фильтрации: {len(KEYWORDS)}")
         logger.info(f"👥 Текущее количество подписчиков: {subscribers_count}")
@@ -979,8 +688,7 @@ async def main():
         asyncio.create_task(website_checker())
         
         # Бесконечный цикл для поддержания работы бота
-        while True:
-            await asyncio.sleep(3600)
+        await user_client.run_until_disconnected()
 
     except Exception as e:
         logger.error(f"💥 Критическая ошибка: {e}")
