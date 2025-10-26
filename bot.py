@@ -67,7 +67,6 @@ WEBSITES = [
 PERMANENT_SUBSCRIBERS = [
     1175795428,
     8019965642,
-    
 ]
 
 # ===== СУПЕР-ФИЛЬТР: ТОЛЬКО ВОЙНА, ПОЛИТИКА, СЕРЬЕЗНЫЕ СОБЫТИЯ =====
@@ -155,7 +154,7 @@ STOP_WORDS = [
     'галерея', 'художник', 'скульптор', 'картина', 'искусство', 'арт-',
     
     # Туризм и отдых
-    'туризм', 'путешествие', 'отдых', 'курорт', 'отель', 'гостиница', 'авиабилет', 'тур', 'путевка',
+    'туризм', 'путешествие', 'отдых', 'курорт', 'отель', 'гостиница', 'авиабилет', ' тур', 'путевка',
     'экскурсия', 'достопримечательность', 'пляж', 'море', 'горы', 'горнолыжный',
     
     # Автомобили (бытовые)
@@ -389,33 +388,37 @@ def mark_post_sent(conn, post_id, channel, text):
 async def parse_rss_feed(website_config):
     """Парсинг RSS ленты с жесткой фильтрацией"""
     try:
-        feed = feedparser.parse(website_config['url'])
-        articles = []
-        
-        for entry in feed.entries[:15]:  # Берем 15 последних статей
-            try:
-                title = entry.title
-                link = entry.link
-                summary = entry.get('summary', '') or entry.get('description', '') or title
+        async with aiohttp.ClientSession() as session:
+            async with session.get(website_config['url']) as response:
+                content = await response.text()
+                feed = feedparser.parse(content)
                 
-                # Объединяем для проверки
-                full_text = f"{title} {summary}"
+                articles = []
                 
-                # ЖЕСТКАЯ ФИЛЬТРАЦИЯ: только война и политика
-                if contains_war_keywords(full_text) and not is_spam_message(full_text):
-                    articles.append({
-                        'title': title,
-                        'link': link,
-                        'summary': summary,
-                        'source': website_config['name'],
-                        'text': full_text
-                    })
-                    
-            except Exception as e:
-                logger.error(f"❌ Ошибка парсинга элемента RSS: {e}")
-                continue
-                
-        return articles
+                for entry in feed.entries[:15]:  # Берем 15 последних статей
+                    try:
+                        title = entry.title
+                        link = entry.link
+                        summary = entry.get('summary', '') or entry.get('description', '') or title
+                        
+                        # Объединяем для проверки
+                        full_text = f"{title} {summary}"
+                        
+                        # ЖЕСТКАЯ ФИЛЬТРАЦИЯ: только война и политика
+                        if contains_war_keywords(full_text) and not is_spam_message(full_text):
+                            articles.append({
+                                'title': title,
+                                'link': link,
+                                'summary': summary,
+                                'source': website_config['name'],
+                                'text': full_text
+                            })
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Ошибка парсинга элемента RSS: {e}")
+                        continue
+                        
+                return articles
         
     except Exception as e:
         logger.error(f"❌ Ошибка RSS {website_config['name']}: {e}")
@@ -487,7 +490,7 @@ def format_website_message(article):
     )
 
 # ===== ПЕРИОДИЧЕСКАЯ ПРОВЕРКА TELEGRAM КАНАЛОВ С СУПЕР-ФИЛЬТРОМ =====
-async def check_telegram_channels(conn, bot, user_client):
+async def check_telegram_channels(conn, bot):
     """Периодическая проверка Telegram каналов на новые сообщения"""
     try:
         logger.info("🔍 Начинаем проверку Telegram каналов...")
@@ -498,7 +501,7 @@ async def check_telegram_channels(conn, bot, user_client):
                 
                 # Получаем последние сообщения из канала
                 messages = []
-                async for message in user_client.iter_messages(channel, limit=20):
+                async for message in bot.iter_messages(channel, limit=20):
                     if message.text and not message.is_group:  # Только текстовые сообщения
                         messages.append(message)
                 
@@ -572,204 +575,4 @@ def format_telegram_message(text, channel_name, message_id):
     message_time = datetime.now().astimezone(pytz.timezone('Europe/Moscow')).strftime('%H:%M %d.%m.%Y')
     
     # Создаем ссылку на сообщение
-    message_url = f"https://t.me/{channel_name}/{message_id}" if not channel_name.startswith('@') else f"https://t.me/{channel_name[1:]}/{message_id}"
-    
-    return (
-        f"🎯 **ВОЕННАЯ СВОДКА**\n"
-        f"📢 **{channel_name}**\n"
-        f"🕒 {message_time}\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"{text}\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔗 [Открыть сообщение]({message_url})"
-    )
-
-# ===== ОСНОВНАЯ ФУНКЦИЯ =====
-async def main():
-    """Главная функция бота"""
-    # Инициализация клиентов
-    user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    bot_client = TelegramClient('bot', API_ID, API_HASH)
-    
-    # Инициализация БД
-    db_conn = init_db()
-    
-    # Создаем aiohttp сессию для RSS
-    aiohttp_session = aiohttp.ClientSession()
-    
-    # Загружаем подписчиков при старте
-    subscribers = load_subscribers()
-    logger.info(f"👥 Загружено подписчиков: {len(subscribers)}")
-    logger.info(f"🌟 Вечных подписчиков: {len(PERMANENT_SUBSCRIBERS)}")
-    logger.info(f"📝 Обычных подписчиков: {len(subscribers) - len(PERMANENT_SUBSCRIBERS)}")
-    logger.info(f"🎯 Военных ключевых слов: {len(WAR_KEYWORDS)}")
-    logger.info(f"🚫 Стоп-слов: {len(STOP_WORDS)}")
-    
-    # ===== ОБРАБОТЧИКИ КОМАНД БОТА =====
-    @bot_client.on(events.NewMessage(pattern='/start'))
-    async def start_handler(event):
-        user_id = event.sender_id
-        subscribers = add_subscriber(user_id)
-        await event.reply(
-            "🎯 **Добро пожаловать в систему ВОЕННЫХ сводок!**\n\n"
-            "✅ Вы подписались на получение ВОЕННЫХ новостей\n"
-            "⚡ Теперь вы будете получать только важные военные и политические сводки\n\n"
-            "✨ Команды:\n"
-            "/stop - отписаться\n"
-            "/stats - статистика\n"
-            "/id - узнать свой ID\n"
-            "/filter - информация о фильтрах"
-        )
-        logger.info(f"👤 Новый подписчик ВОЕННЫХ сводок: {user_id}")
-    
-    @bot_client.on(events.NewMessage(pattern='/stop'))
-    async def stop_handler(event):
-        user_id = event.sender_id
-        subscribers = remove_subscriber(user_id)
-        await event.reply("❌ Вы отписались от военных сводок")
-        logger.info(f"👤 Отписался от ВОЕННЫХ сводок: {user_id}")
-    
-    @bot_client.on(events.NewMessage(pattern='/stats'))
-    async def stats_handler(event):
-        subscribers = load_subscribers()
-        permanent_count = len([s for s in subscribers if s in PERMANENT_SUBSCRIBERS])
-        regular_count = len(subscribers) - permanent_count
-        
-        await event.reply(
-            f"📊 **Статистика ВОЕННОЙ системы:**\n\n"
-            f"👥 Всего подписчиков: {len(subscribers)}\n"
-            f"🌟 Вечных подписчиков: {permanent_count}\n"
-            f"📝 Обычных подписчиков: {regular_count}\n"
-            f"📰 Отслеживается каналов: {len(CHANNELS)}\n"
-            f"🌐 Отслеживается сайтов: {len(WEBSITES)}\n"
-            f"🎯 Военных ключевых слов: {len(WAR_KEYWORDS)}\n"
-            f"🚫 Стоп-слов: {len(STOP_WORDS)}\n\n"
-            f"⚡ Режим: только ВОЕННЫЕ и ПОЛИТИЧЕСКИЕ новости\n"
-            f"❌ ИСКЛЮЧЕНО: оповещения, чаты, сезонная хуйня\n"
-            f"❌ ИСКЛЮЧЕНО: приграничные регионы (Курск, Белгород и т.д.)"
-        )
-    
-    @bot_client.on(events.NewMessage(pattern='/id'))
-    async def id_handler(event):
-        user_id = event.sender_id
-        await event.reply(f"🆔 Ваш ID: `{user_id}`")
-    
-    @bot_client.on(events.NewMessage(pattern='/filter'))
-    async def filter_handler(event):
-        await event.reply(
-            "🎯 **Система фильтрации ВОЕННЫХ новостей:**\n\n"
-            "✅ **ПРОПУСКАЕТ:**\n"
-            "• Военные действия и оружие\n"
-            "• Геополитика и конфликты\n"
-            "• Территории и фронты\n"
-            "• Политика и власть\n"
-            "• Серьезные происшествия\n\n"
-            "🚫 **БЛОКИРУЕТ:**\n"
-            "• Спорт и развлечения\n"
-            "• Наука и космос\n"
-            "• Технологии (бытовые)\n"
-            "• Игры и хобби\n"
-            "• Еда, мода, животные\n"
-            "• Ракетные/авиационные оповещения\n"
-            "• Сообщения про БПЛА в воздухе\n"
-            "• Ночные/утренние чаты\n"
-            "• Пожелания спокойной ночи/доброго утра\n"
-            "• Сезонные красоты (осень, зима и т.д.)\n"
-            "• Сообщения с избытком КАПСА\n"
-            "• **ПРИГРАНИЧНЫЕ РЕГИОНЫ (Курск, Белгород, Брянск и т.д.)**\n"
-            "• И всякая другая хуйня"
-        )
-    
-    @bot_client.on(events.NewMessage(pattern='/test'))
-    async def test_handler(event):
-        """Тестовая команда для проверки работы"""
-        await event.reply("🎯 Система ВОЕННЫХ сводок работает! Ожидайте важные новости...")
-    
-    # ===== ФОНОВЫЕ ЗАДАЧИ =====
-    async def rss_checker():
-        """Фоновая задача для проверки RSS"""
-        while True:
-            try:
-                logger.info("🔄 Проверка ВОЕННЫХ RSS лент...")
-                await check_all_feeds(db_conn, bot_client)
-                logger.info("💤 Следующая проверка RSS через 10 минут")
-                await asyncio.sleep(600)  # 10 минут
-            except Exception as e:
-                logger.error(f"❌ Ошибка в RSS чекере: {e}")
-                await asyncio.sleep(60)
-    
-    async def telegram_checker():
-        """Фоновая задача для проверки Telegram каналов"""
-        while True:
-            try:
-                logger.info("🔍 Проверка ВОЕННЫХ Telegram каналов...")
-                await check_telegram_channels(db_conn, bot_client, user_client)
-                logger.info("💤 Следующая проверка Telegram через 10 минут")
-                await asyncio.sleep(600)  # 10 минут
-            except Exception as e:
-                logger.error(f"❌ Ошибка в Telegram чекере: {e}")
-                await asyncio.sleep(60)
-    
-    async def status_logger():
-        """Периодическое логирование статуса"""
-        while True:
-            try:
-                subscribers = load_subscribers()
-                logger.info(f"📊 Статус ВОЕННОЙ системы: {len(subscribers)} подписчиков")
-                await asyncio.sleep(3600)
-            except Exception as e:
-                logger.error(f"❌ Ошибка в статус логгере: {e}")
-                await asyncio.sleep(300)
-    
-    # ===== ЗАПУСК БОТА =====
-    try:
-        logger.info("🎯 Запуск системы ВОЕННЫХ сводок...")
-        
-        # Запускаем клиенты
-        await bot_client.start(bot_token=BOT_TOKEN)
-        await user_client.start()
-        
-        # Финальная проверка подписчиков
-        subscribers = load_subscribers()
-        logger.info("✅ Система ВОЕННЫХ сводок успешно запущена!")
-        logger.info(f"📊 Итоговые данные:")
-        logger.info(f"   👥 Всего подписчиков: {len(subscribers)}")
-        logger.info(f"   🌟 Вечных подписчиков: {len(PERMANENT_SUBSCRIBERS)}")
-        logger.info(f"   🎯 Военных ключевых слов: {len(WAR_KEYWORDS)}")
-        logger.info(f"   🚫 Стоп-слов: {len(STOP_WORDS)}")
-        logger.info("⚡ Режим: только ВОЕННЫЕ и ПОЛИТИЧЕСКИЕ новости")
-        logger.info("❌ ИСКЛЮЧЕНО: оповещения, чаты, сезонная хуйня")
-        logger.info("❌ ИСКЛЮЧЕНО: приграничные регионы (Курск, Белгород и т.д.)")
-        
-        if len(subscribers) == 0:
-            logger.warning("⚠️ ВНИМАНИЕ: Нет подписчиков! Отправьте боту /start")
-        
-        # Запускаем фоновые задачи
-        asyncio.create_task(rss_checker())
-        asyncio.create_task(telegram_checker())
-        asyncio.create_task(status_logger())
-        
-        # Бесконечный цикл
-        await asyncio.Future()
-        
-    except Exception as e:
-        logger.error(f"💥 Критическая ошибка при запуске: {e}")
-    finally:
-        # Корректное завершение
-        await user_client.disconnect()
-        await bot_client.disconnect()
-        await aiohttp_session.close()
-        db_conn.close()
-        logger.info("🛑 Система ВОЕННЫХ сводок остановлена")
-
-if __name__ == '__main__':
-    # Создаем необходимые файлы если их нет
-    if not os.path.exists(SUBSCRIBERS_FILE):
-        with open(SUBSCRIBERS_FILE, 'w', encoding='utf-8') as f:
-            pass
-    
-    # Запускаем бота
-    asyncio.run(main())
-
-
-
+    message_url = f"https://t.me/{channel_name}/{message_id}"
