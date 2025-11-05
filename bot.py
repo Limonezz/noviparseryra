@@ -60,31 +60,6 @@ WEBSITES = [
         'name': 'Аргументы и Факты', 
         'url': 'https://aif.ru/rss/news.php',
         'type': 'rss'
-    },
-    {
-        'name': 'RuCriminal',
-        'url': 'https://www.rucriminal.info/rss.xml',
-        'type': 'rss'
-    },
-    {
-        'name': 'Фонарь',
-        'url': 'https://fonar.tv/rss',
-        'type': 'rss'
-    },
-    {
-        'name': 'Генеральная прокуратура ДВФО',
-        'url': 'https://epp.genproc.gov.ru/ru/proc_dvfo/rss/',
-        'type': 'rss'
-    },
-    {
-        'name': 'ФедералПресс',
-        'url': 'https://fedpress.ru/rss/news',
-        'type': 'rss'
-    },
-    {
-        'name': 'Бел.ру',
-        'url': 'https://bel.ru/rss/news',
-        'type': 'rss'
     }
 ]
 
@@ -94,7 +69,7 @@ PERMANENT_SUBSCRIBERS = [
     8019965642,
 ]
 
-# ===== СУПЕР-ФИЛЬТР: ТОЛЬКО ВОЙНА, ПОЛИТИКА, СЕРЬЕЗНЫЕ СОБЫТИЯ =====
+# ===== КЛЮЧЕВЫЕ СЛОВА =====
 WAR_KEYWORDS = [
     'обстрел', 'атака', 'прилет', 'диверсант', 'ДРГ', 'ракета', 'Искандер',
     'пленный', 'плен', 'РЭБ', 'наступление', 'контрнаступление',
@@ -117,43 +92,7 @@ WAR_KEYWORDS = [
     'авария', 'катастрофа', 'обрушение', 'разрушение', 'взрыв', 'гибель', 'пострадавший',
     'уголовное дело', 'задержание', 'арест', 'суд', 'приговор',
     'АЭС', 'атомная станция', 'Курская АЭС-2', 'электроэнергия',
-    'эвакуация', 'беженец', 'переселенец', 'гуманитарная помощь', 'военное положение',
-    'коррупция', 'взятка', 'растрата', 'мошенничество', 'уголовное', 'следствие',
-    'прокуратура', 'суд', 'арест', 'обыск', 'задержание', 'приговор',
-    'Бурков', 'Уралвагонзавод', 'губернатор', 'теневой', 'империя'
-]
-
-# ===== СТОП-СЛОВА =====
-STOP_WORDS = [
-    'футбол', 'хоккей', 'теннис', 'баскетбол', 'волейбол', 'UFC', 'бокс', 'чемпионат', 'матч',
-    'кино', 'сериал', 'актер', 'актриса', 'режиссер', 'премия', 'музыка', 'песня', 'альбом',
-    'концерт', 'фестиваль', 'артист',
-    'космос', 'астроном', 'планета', 'марс', 'луна', 'спутник',
-    'смартфон', 'iphone', 'android', 'гаджет', 'приложение', 'соцсеть',
-    'игра', 'геймер', 'playstation', 'xbox', 'steam',
-    'рецепт', 'кулинар', 'еда', 'бургер', 'пицца', 'ресторан', 'кафе',
-    'мода', 'дизайнер', 'показ', 'коллекция', 'модель',
-    'котик', 'кот', 'кошка', 'собака', 'питомец', 'животное',
-    'театр', 'спектакль', 'опера', 'балет',
-    'туризм', 'путешествие', 'отдых', 'курорт', 'отель',
-    'автомобиль', 'машина', 'бмв', 'мерседес', 'тойота',
-    'дом', 'квартира', 'ремонт', 'интерьер',
-    'диета', 'похудение', 'фитнес', 'тренажерный зал', 'йога',
-    'юмор', 'анекдот', 'мем', 'прикол', 'розыгрыш',
-    'спокойной ночи', 'доброй ночи', 'доброе утро', 'с добрым утром',
-    'ночные чаты', 'утренние чаты', 'ночной чат', 'утренний чат',
-    'отличного дня', 'хорошего дня', 'удачного дня',
-    'красота осени', 'осенние краски', 'осенний лес',
-    'зимняя сказка', 'зимние пейзажи', 'снегопад',
-    'весеннее настроение', 'весна пришла',
-    'летний вечер', 'летняя ночь', 'летний закат',
-    'красивые фото', 'красивый вид', 'пейзаж',
-    'фотография дня', 'фото дня', 'картинка дня',
-    'моё мнение', 'личное мнение', 'хочу рассказать',
-    'уютный вечер', 'домашний уют', 'семейный вечер',
-    'поздравляю', 'поздравления', 'с праздником', 'с днем рождения',
-    'рецепт', 'кулинария', 'готовим', 'блюдо',
-    'совет', 'рекомендация', 'лайфхак'
+    'эвакуация', 'беженец', 'переселенец', 'гуманитарная помощь', 'военное положение'
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
@@ -171,7 +110,6 @@ logger = logging.getLogger(__name__)
 
 # ===== СИСТЕМА ПОДПИСЧИКОВ =====
 def load_subscribers():
-    """Загрузка всех подписчиков"""
     try:
         with open(SUBSCRIBERS_FILE, 'r', encoding='utf-8') as f:
             file_subs = [int(line.strip()) for line in f if line.strip().isdigit()]
@@ -182,68 +120,44 @@ def load_subscribers():
     return all_subs
 
 def save_subscribers(subscribers):
-    """Сохранение подписчиков"""
     regular_subs = [sub for sub in subscribers if sub not in PERMANENT_SUBSCRIBERS]
-    
     try:
         with open(SUBSCRIBERS_FILE, 'w', encoding='utf-8') as f:
             for user_id in regular_subs:
                 f.write(f"{user_id}\n")
     except Exception as e:
-        logger.error(f"❌ Ошибка сохранения подписчиков: {e}")
+        logger.error(f"Ошибка сохранения подписчиков: {e}")
 
 def add_subscriber(user_id):
-    """Добавление подписчика"""
     subscribers = load_subscribers()
     if user_id not in subscribers:
         subscribers.append(user_id)
         save_subscribers(subscribers)
-        logger.info(f"✅ Новый подписчик: {user_id}")
+        logger.info(f"Новый подписчик: {user_id}")
     return load_subscribers()
 
 def remove_subscriber(user_id):
-    """Удаление подписчика"""
     if user_id in PERMANENT_SUBSCRIBERS:
-        logger.info(f"⚠️ Нельзя удалить вечного подписчика: {user_id}")
         return load_subscribers()
-        
     subscribers = load_subscribers()
     if user_id in subscribers:
         subscribers.remove(user_id)
         save_subscribers(subscribers)
-        logger.info(f"❌ Отписался: {user_id}")
+        logger.info(f"Отписался: {user_id}")
     return load_subscribers()
 
 # ===== ФИЛЬТРЫ =====
 def contains_war_keywords(text):
-    """Проверяет, содержит ли текст ключевые слова войны"""
     if not text:
         return False
-        
     text_lower = text.lower()
-    
-    # Проверяем стоп-слова
-    for stop_word in STOP_WORDS:
-        if stop_word.lower() in text_lower:
-            return False
-    
-    # Проверка на капс (только для очень длинных капс-сообщений)
-    if len(text) > 50:
-        caps_count = sum(1 for char in text if char.isupper())
-        caps_ratio = caps_count / len(text)
-        if caps_ratio > 0.7:  # Только очень высокий процент капса
-            return False
-    
-    # Проверяем военные ключевые слова
     for keyword in WAR_KEYWORDS:
         if keyword.lower() in text_lower:
             return True
-    
     return False
 
 # ===== БАЗА ДАННЫХ =====
 def init_db():
-    """Инициализация базы данных"""
     conn = sqlite3.connect('news.db', check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
@@ -258,13 +172,11 @@ def init_db():
     return conn
 
 def is_post_sent(conn, post_id):
-    """Проверка, отправлялся ли пост"""
     cursor = conn.cursor()
     cursor.execute("SELECT post_id FROM sent_posts WHERE post_id = ?", (post_id,))
     return cursor.fetchone() is not None
 
 def mark_post_sent(conn, post_id, channel, text):
-    """Пометить пост как отправленный"""
     cursor = conn.cursor()
     cursor.execute(
         "INSERT OR IGNORE INTO sent_posts (post_id, channel, text) VALUES (?, ?, ?)",
@@ -274,23 +186,18 @@ def mark_post_sent(conn, post_id, channel, text):
 
 # ===== RSS ПАРСИНГ =====
 async def parse_rss_feed(website_config):
-    """Парсинг RSS ленты"""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(website_config['url']) as response:
                 content = await response.text()
                 feed = feedparser.parse(content)
-                
                 articles = []
-                
                 for entry in feed.entries[:10]:
                     try:
                         title = entry.title
                         link = entry.link
                         summary = entry.get('summary', '') or entry.get('description', '') or title
-                        
                         full_text = f"{title} {summary}"
-                        
                         if contains_war_keywords(full_text):
                             articles.append({
                                 'title': title,
@@ -299,357 +206,182 @@ async def parse_rss_feed(website_config):
                                 'source': website_config['name'],
                                 'text': full_text
                             })
-                            
-                    except Exception as e:
+                    except Exception:
                         continue
-                        
                 return articles
-        
     except Exception as e:
-        logger.error(f"❌ Ошибка RSS {website_config['name']}: {e}")
+        logger.error(f"Ошибка RSS {website_config['name']}: {e}")
         return []
 
 async def check_all_feeds(conn, client):
-    """Проверка всех RSS лент"""
     try:
-        logger.info("🌐 Проверка RSS лент...")
-        
+        logger.info("Проверка RSS лент...")
         for website in WEBSITES:
-            try:
-                articles = await parse_rss_feed(website)
-                logger.info(f"📄 {website['name']}: {len(articles)} военных статей")
-                
-                for article in articles:
-                    article_id = f"rss_{hash(article['link']) % 100000000}"
-                    
-                    if not is_post_sent(conn, article_id):
-                        subscribers = load_subscribers()
-                        message = format_website_message(article)
-                        
-                        success_count = 0
-                        for user_id in subscribers:
-                            try:
-                                await client.send_message(
-                                    user_id, 
-                                    message, 
-                                    parse_mode='Markdown',
-                                    link_preview=True
-                                )
-                                success_count += 1
-                                await asyncio.sleep(0.1)
-                            except Exception as e:
-                                logger.error(f"❌ Ошибка отправки {user_id}: {e}")
-                        
-                        if success_count > 0:
-                            mark_post_sent(conn, article_id, article['source'], article['title'])
-                            logger.info(f"✅ Отправлено {article['source']} для {success_count} подписчиков")
-                
-                await asyncio.sleep(1)
-            except Exception as e:
-                logger.error(f"❌ Ошибка при обработке {website['name']}: {e}")
-                continue
-            
+            articles = await parse_rss_feed(website)
+            logger.info(f"{website['name']}: {len(articles)} статей")
+            for article in articles:
+                article_id = f"rss_{hash(article['link']) % 100000000}"
+                if not is_post_sent(conn, article_id):
+                    subscribers = load_subscribers()
+                    message = f"📰 **{article['source']}**\n\n{article['title']}\n\n🔗 [Читать]({article['link']})"
+                    success_count = 0
+                    for user_id in subscribers:
+                        try:
+                            await client.send_message(user_id, message, parse_mode='Markdown')
+                            success_count += 1
+                            await asyncio.sleep(0.1)
+                        except Exception as e:
+                            logger.error(f"Ошибка отправки {user_id}: {e}")
+                    if success_count > 0:
+                        mark_post_sent(conn, article_id, article['source'], article['title'])
+                        logger.info(f"Отправлено {article['source']} для {success_count} подписчиков")
+            await asyncio.sleep(1)
     except Exception as e:
-        logger.error(f"❌ Ошибка проверки лент: {e}")
+        logger.error(f"Ошибка проверки лент: {e}")
 
-def format_website_message(article):
-    """Форматирование статьи"""
-    title = article['title']
-    if len(title) > 200:
-        title = title[:200] + "..."
-    
-    return (
-        f"🎯 **Сводка новостей**\n"
-        f"📰 **{article['source']}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"**{title}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔗 [Читать на сайте]({article['link']})"
-    )
-
-# ===== ОБРАБОТКА ТЕЛЕГРАМ КАНАЛОВ =====
+# ===== ТЕЛЕГРАМ КАНАЛЫ =====
 async def send_to_subscribers(client, message_text, post_id, channel_name, conn):
-    """Отправка сообщения всем подписчикам"""
     if is_post_sent(conn, post_id):
         return 0
-    
     subscribers = load_subscribers()
     success_count = 0
-    
     for user_id in subscribers:
         try:
-            await client.send_message(
-                user_id,
-                message_text,
-                parse_mode='Markdown',
-                link_preview=False
-            )
+            await client.send_message(user_id, message_text, parse_mode='Markdown')
             success_count += 1
             await asyncio.sleep(0.1)
         except Exception as e:
-            logger.error(f"❌ Ошибка отправки {user_id}: {e}")
-    
+            logger.error(f"Ошибка отправки {user_id}: {e}")
     if success_count > 0:
         mark_post_sent(conn, post_id, channel_name, message_text[:100])
-        logger.info(f"✅ Отправлено из {channel_name} для {success_count} подписчиков")
-    
+        logger.info(f"ОТПРАВЛЕНО ИЗ {channel_name} для {success_count} подписчиков")
     return success_count
-
-def format_telegram_message(text, channel_name):
-    """Форматирование сообщения из Telegram канала"""
-    if len(text) > 800:
-        text = text[:800] + "..."
-    
-    return (
-        f"🎯 **Экстренная сводка**\n"
-        f"📢 **{channel_name}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"{text}\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"#сводка"
-    )
 
 # ===== ОСНОВНОЙ БОТ =====
 async def main():
-    """Главная функция бота"""
-    # Инициализация
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     db_conn = init_db()
-    
-    # Загружаем подписчиков
     subscribers = load_subscribers()
-    logger.info(f"👥 Загружено подписчиков: {len(subscribers)}")
-    
-    # ===== ОБРАБОТЧИК ТЕЛЕГРАМ КАНАЛОВ =====
+    logger.info(f"Подписчиков: {len(subscribers)}")
+
+    # Храним ID каналов
+    channel_ids = {}
+
+    # Получаем ID всех каналов при запуске
+    async def get_channel_ids():
+        for channel in CHANNELS:
+            try:
+                entity = await client.get_entity(channel)
+                channel_ids[entity.id] = channel
+                logger.info(f"Канал {channel} -> ID: {entity.id}")
+            except Exception as e:
+                logger.error(f"Ошибка получения ID для {channel}: {e}")
+
+    # Обработчик ВСЕХ сообщений
     @client.on(events.NewMessage)
     async def handler(event):
-        """Обработчик всех сообщений"""
         try:
-            # Пропускаем исходящие сообщения
+            # Пропускаем свои сообщения
             if event.message.out:
                 return
             
-            # Получаем информацию о чате
-            chat = await event.get_chat()
-            chat_id = chat.id
+            chat_id = event.chat_id
             
-            # Получаем username канала
-            chat_username = getattr(chat, 'username', None)
-            
-            # Проверяем, является ли это нашим каналом
-            if chat_username and chat_username in CHANNELS:
-                logger.info(f"📨 СООБЩЕНИЕ ИЗ КАНАЛА: {chat_username}")
-                
-                # Получаем текст сообщения
+            # Если это известный канал
+            if chat_id in channel_ids:
+                channel_name = channel_ids[chat_id]
                 message_text = event.message.text or event.message.caption or ""
                 
-                if not message_text.strip():
-                    return
-                
-                logger.info(f"📝 Текст: {message_text[:100]}...")
-                
-                # Проверяем на военные ключевые слова
-                if contains_war_keywords(message_text):
-                    logger.info(f"🎯 НАЙДЕНЫ КЛЮЧЕВЫЕ СЛОВА!")
+                if message_text.strip():
+                    logger.info(f"СООБЩЕНИЕ ИЗ {channel_name}: {message_text[:100]}...")
                     
-                    # Создаем ID поста
-                    post_id = f"tg_{chat_id}_{event.message.id}"
+                    if contains_war_keywords(message_text):
+                        logger.info(f"НАЙДЕНЫ КЛЮЧЕВЫЕ СЛОВА В {channel_name}!")
+                        
+                        post_id = f"tg_{chat_id}_{event.message.id}"
+                        formatted_message = f"🎯 **{channel_name}**\n\n{message_text}"
+                        
+                        success_count = await send_to_subscribers(client, formatted_message, post_id, channel_name, db_conn)
+                        if success_count > 0:
+                            logger.info(f"УСПЕХ! Отправлено {success_count} подписчикам")
+            
+            # Дополнительно: логируем ВСЕ сообщения для отладки
+            else:
+                try:
+                    chat = await event.get_chat()
+                    chat_name = getattr(chat, 'username', None) or getattr(chat, 'title', f"ID_{chat_id}")
+                    message_text = event.message.text or event.message.caption or ""
+                    if message_text.strip():
+                        logger.info(f"ДРУГОЙ ЧАТ {chat_name}: {message_text[:50]}...")
+                except:
+                    pass
                     
-                    # Форматируем сообщение
-                    formatted_message = format_telegram_message(message_text, chat_username)
-                    
-                    # Отправляем подписчикам
-                    success_count = await send_to_subscribers(
-                        client, formatted_message, post_id, chat_username, db_conn
-                    )
-                    
-                    if success_count > 0:
-                        logger.info(f"📢 УСПЕХ: Отправлено для {success_count} подписчиков")
-        
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки: {e}")
+            logger.error(f"Ошибка обработки: {e}")
 
-    # ===== КОМАНДЫ БОТА =====
+    # Команды бота
     @client.on(events.NewMessage(pattern='/start'))
     async def start_handler(event):
         user_id = event.sender_id
         subscribers = add_subscriber(user_id)
-        await event.reply(
-            "🎯 **Добро пожаловать в систему ВОЕННЫХ сводок!**\n\n"
-            "✅ Вы подписались на получение ВОЕННЫХ новостей\n"
-            "📰 Источники: Telegram каналы и новостные сайты\n"
-            "⚡ Теперь вы будете получать только важные военные и политические сводки\n\n"
-            "✨ Команды:\n"
-            "/stop - отписаться\n"
-            "/stats - статистика\n"
-            "/id - узнать свой ID\n"
-            "/test - тестовая отправка\n"
-            "/channels - список отслеживаемых каналов\n"
-            "/debug - отладочная информация"
-        )
-        logger.info(f"👤 Новый подписчик: {user_id}")
-    
+        await event.reply("✅ Подписан на военные сводки!")
+        logger.info(f"Новый подписчик: {user_id}")
+
     @client.on(events.NewMessage(pattern='/stop'))
     async def stop_handler(event):
         user_id = event.sender_id
         subscribers = remove_subscriber(user_id)
-        await event.reply("❌ Вы отписались от военных сводок")
-        logger.info(f"👤 Отписался: {user_id}")
-    
+        await event.reply("❌ Отписан от сводок")
+
     @client.on(events.NewMessage(pattern='/stats'))
     async def stats_handler(event):
         subscribers = load_subscribers()
-        await event.reply(
-            f"📊 **Статистика:**\n\n"
-            f"👥 Подписчиков: {len(subscribers)}\n"
-            f"📰 Каналов: {len(CHANNELS)}\n"
-            f"🌐 Сайтов: {len(WEBSITES)}\n"
-            f"🎯 Ключевых слов: {len(WAR_KEYWORDS)}"
-        )
-    
-    @client.on(events.NewMessage(pattern='/id'))
-    async def id_handler(event):
-        user_id = event.sender_id
-        await event.reply(f"🆔 Ваш ID: `{user_id}`")
-    
+        await event.reply(f"Подписчиков: {len(subscribers)}\nКаналов: {len(CHANNELS)}")
+
     @client.on(events.NewMessage(pattern='/test'))
     async def test_handler(event):
-        """Тестовая команда"""
-        try:
-            await event.reply(
-                "🎯 **Тестовое сообщение от системы военных сводок!**\n\n"
-                "✅ Бот работает корректно!\n"
-                "📡 Мониторинг каналов и сайтов активен\n"
-                "⚡ Вы будете получать важные военные сводки"
-            )
-            logger.info("✅ Тестовое сообщение отправлено")
-        except Exception as e:
-            logger.error(f"❌ Ошибка тестовой отправки: {e}")
-    
-    @client.on(events.NewMessage(pattern='/channels'))
-    async def channels_handler(event):
-        """Показать список отслеживаемых каналов"""
-        channels_list = "\n".join([f"• {channel}" for channel in CHANNELS[:20]])
-        if len(CHANNELS) > 20:
-            channels_list += f"\n• ... и еще {len(CHANNELS) - 20} каналов"
-        
-        await event.reply(
-            f"📢 **Отслеживаемые каналы:**\n\n"
-            f"{channels_list}\n\n"
-            f"🌐 **Новостные сайты:** {len(WEBSITES)} источников"
-        )
-    
+        await event.reply("Бот работает! Ожидаю сообщения из каналов...")
+
     @client.on(events.NewMessage(pattern='/debug'))
     async def debug_handler(event):
-        """Отладочная информация"""
-        try:
-            # Проверяем подключение к каналам
-            connected_channels = []
-            for channel in CHANNELS[:10]:
-                try:
-                    entity = await client.get_entity(channel)
-                    connected_channels.append(f"✅ {channel}")
-                except Exception as e:
-                    connected_channels.append(f"❌ {channel}: {str(e)[:50]}")
-            
-            channels_status = "\n".join(connected_channels)
-            
-            await event.reply(
-                f"🔧 **Отладочная информация:**\n\n"
-                f"👥 Подписчиков: {len(load_subscribers())}\n"
-                f"📡 Статус каналов:\n{channels_status}\n\n"
-                f"🔄 Бот активен и работает"
-            )
-        except Exception as e:
-            await event.reply(f"❌ Ошибка отладки: {e}")
-    
-    @client.on(events.NewMessage(pattern='/force_check'))
-    async def force_check_handler(event):
-        """Принудительная проверка"""
-        try:
-            await event.reply("🔄 Запускаю принудительную проверку...")
-            await check_all_feeds(db_conn, client)
-            await event.reply("✅ Проверка завершена!")
-        except Exception as e:
-            await event.reply(f"❌ Ошибка проверки: {e}")
+        await event.reply(f"Каналов в мониторинге: {len(channel_ids)}")
 
-    # ===== ФОНОВЫЕ ЗАДАЧИ =====
+    # Фоновая проверка RSS
     async def periodic_checker():
-        """Периодическая проверка RSS"""
         while True:
-            try:
-                await check_all_feeds(db_conn, client)
-                logger.info("💤 Следующая проверка RSS через 5 минут")
-                await asyncio.sleep(300)
-            except Exception as e:
-                logger.error(f"❌ Ошибка в проверке RSS: {e}")
-                await asyncio.sleep(60)
-    
-    async def status_logger():
-        """Логирование статуса"""
-        while True:
-            subscribers = load_subscribers()
-            logger.info(f"📊 Статус: {len(subscribers)} подписчиков, мониторинг {len(CHANNELS)} каналов и {len(WEBSITES)} сайтов")
-            await asyncio.sleep(3600)
+            await check_all_feeds(db_conn, client)
+            await asyncio.sleep(300)
 
-    # ===== ЗАПУСК =====
+    # Запуск
     try:
-        logger.info("🎯 Запуск системы военных сводок...")
-        
         await client.start(bot_token=BOT_TOKEN)
+        logger.info("Бот запущен!")
         
-        logger.info("⏳ Проверяем подключение к каналам...")
+        # Получаем ID каналов
+        await get_channel_ids()
+        logger.info(f"Загружено {len(channel_ids)} каналов")
         
-        # Проверяем подключение к каналам
-        connected_count = 0
-        for channel in CHANNELS:
-            try:
-                entity = await client.get_entity(channel)
-                connected_count += 1
-                logger.info(f"✅ Канал доступен: {channel}")
-            except Exception as e:
-                logger.error(f"❌ Ошибка подключения к каналу {channel}: {e}")
-        
-        logger.info(f"✅ Бот успешно запущен!")
-        logger.info(f"📊 Подписчиков: {len(subscribers)}")
-        logger.info(f"📰 Каналов доступно: {connected_count}/{len(CHANNELS)}")
-        logger.info(f"🌐 Сайтов: {len(WEBSITES)}")
-        logger.info(f"🎯 Ожидаю сообщения из каналов...")
-        
-        # Запускаем фоновые задачи
-        asyncio.create_task(periodic_checker())
-        asyncio.create_task(status_logger())
-        
-        # Отправляем сообщение о запуске вечным подписчикам
+        # Уведомляем вечных подписчиков
         for user_id in PERMANENT_SUBSCRIBERS:
             try:
-                await client.send_message(
-                    user_id,
-                    "🟢 **Система военных сводок запущена!**\n\n"
-                    "✅ Бот активен и начал мониторинг:\n"
-                    f"📰 {connected_count}/{len(CHANNELS)} Telegram каналов\n"
-                    f"🌐 {len(WEBSITES)} новостных сайтов\n\n"
-                    "⚡ Ожидайте важные военные сводки\n"
-                    "🔧 Для отладки используйте /debug"
-                )
+                await client.send_message(user_id, f"🟢 Бот запущен! Мониторим {len(channel_ids)} каналов")
             except Exception as e:
-                logger.error(f"❌ Не удалось уведомить {user_id}: {e}")
+                logger.error(f"Не удалось уведомить {user_id}: {e}")
         
-        # Бесконечный цикл
+        # Запускаем задачи
+        asyncio.create_task(periodic_checker())
+        
+        logger.info("Ожидаю сообщения из каналов...")
         await client.run_until_disconnected()
         
     except Exception as e:
-        logger.error(f"💥 Критическая ошибка: {e}")
+        logger.error(f"Ошибка: {e}")
     finally:
         await client.disconnect()
         db_conn.close()
-        logger.info("🛑 Система остановлена")
 
 if __name__ == '__main__':
-    # Создаем файлы если их нет
     if not os.path.exists(SUBSCRIBERS_FILE):
         with open(SUBSCRIBERS_FILE, 'w', encoding='utf-8') as f:
             pass
-    
-    # Запускаем бота
     asyncio.run(main())
