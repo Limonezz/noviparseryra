@@ -60,6 +60,31 @@ WEBSITES = [
         'name': 'Аргументы и Факты', 
         'url': 'https://aif.ru/rss/news.php',
         'type': 'rss'
+    },
+    {
+        'name': 'RuCriminal',
+        'url': 'https://www.rucriminal.info/rss.xml',
+        'type': 'rss'
+    },
+    {
+        'name': 'Фонарь',
+        'url': 'https://fonar.tv/rss',
+        'type': 'rss'
+    },
+    {
+        'name': 'Генеральная прокуратура ДВФО',
+        'url': 'https://epp.genproc.gov.ru/ru/proc_dvfo/rss/',
+        'type': 'rss'
+    },
+    {
+        'name': 'ФедералПресс',
+        'url': 'https://fedpress.ru/rss/news',
+        'type': 'rss'
+    },
+    {
+        'name': 'Бел.ру',
+        'url': 'https://bel.ru/rss/news',
+        'type': 'rss'
     }
 ]
 
@@ -92,7 +117,10 @@ WAR_KEYWORDS = [
     'авария', 'катастрофа', 'обрушение', 'разрушение', 'взрыв', 'гибель', 'пострадавший',
     'уголовное дело', 'задержание', 'арест', 'суд', 'приговор',
     'АЭС', 'атомная станция', 'Курская АЭС-2', 'электроэнергия',
-    'эвакуация', 'беженец', 'переселенец', 'гуманитарная помощь', 'военное положение'
+    'эвакуация', 'беженец', 'переселенец', 'гуманитарная помощь', 'военное положение',
+    'коррупция', 'взятка', 'растрата', 'мошенничество', 'уголовное', 'следствие',
+    'прокуратура', 'суд', 'арест', 'обыск', 'задержание', 'приговор',
+    'Бурков', 'Уралвагонзавод', 'губернатор', 'теневой', 'империя'
 ]
 
 # ===== СТОП-СЛОВА =====
@@ -130,9 +158,7 @@ STOP_WORDS = [
     'поздравляю', 'поздравления', 'с праздником', 'с днем рождения',
     'ВНИМАНИЕ', 'ВСЕМ', 'СРОЧНО', 'ВАЖНО', 'ОПАСНОСТЬ', 'ТРЕВОГА',
     'рецепт', 'кулинария', 'готовим', 'блюдо',
-    'совет', 'рекомендация', 'лайфхак',
-    'Курск', 'Курская область', 'Белгород', 'Белгородская область', 
-    'Брянск', 'Брянская область', 'Воронеж', 'Воронежская область'
+    'совет', 'рекомендация', 'лайфхак'
 ]
 
 SUBSCRIBERS_FILE = 'subscribers.txt'
@@ -294,35 +320,39 @@ async def check_all_feeds(conn, client):
         logger.info("🌐 Проверка RSS лент...")
         
         for website in WEBSITES:
-            articles = await parse_rss_feed(website)
-            logger.info(f"📄 {website['name']}: {len(articles)} военных статей")
-            
-            for article in articles:
-                article_id = f"rss_{hash(article['link']) % 100000000}"
+            try:
+                articles = await parse_rss_feed(website)
+                logger.info(f"📄 {website['name']}: {len(articles)} военных статей")
                 
-                if not is_post_sent(conn, article_id):
-                    subscribers = load_subscribers()
-                    message = format_website_message(article)
+                for article in articles:
+                    article_id = f"rss_{hash(article['link']) % 100000000}"
                     
-                    success_count = 0
-                    for user_id in subscribers:
-                        try:
-                            await client.send_message(
-                                user_id, 
-                                message, 
-                                parse_mode='Markdown',
-                                link_preview=True
-                            )
-                            success_count += 1
-                            await asyncio.sleep(0.1)
-                        except Exception as e:
-                            logger.error(f"❌ Ошибка отправки {user_id}: {e}")
-                    
-                    if success_count > 0:
-                        mark_post_sent(conn, article_id, article['source'], article['title'])
-                        logger.info(f"✅ Отправлено {article['source']} для {success_count} подписчиков")
-            
-            await asyncio.sleep(1)
+                    if not is_post_sent(conn, article_id):
+                        subscribers = load_subscribers()
+                        message = format_website_message(article)
+                        
+                        success_count = 0
+                        for user_id in subscribers:
+                            try:
+                                await client.send_message(
+                                    user_id, 
+                                    message, 
+                                    parse_mode='Markdown',
+                                    link_preview=True
+                                )
+                                success_count += 1
+                                await asyncio.sleep(0.1)
+                            except Exception as e:
+                                logger.error(f"❌ Ошибка отправки {user_id}: {e}")
+                        
+                        if success_count > 0:
+                            mark_post_sent(conn, article_id, article['source'], article['title'])
+                            logger.info(f"✅ Отправлено {article['source']} для {success_count} подписчиков")
+                
+                await asyncio.sleep(1)
+            except Exception as e:
+                logger.error(f"❌ Ошибка при обработке {website['name']}: {e}")
+                continue
             
     except Exception as e:
         logger.error(f"❌ Ошибка проверки лент: {e}")
@@ -401,6 +431,10 @@ async def main():
     async def channel_handler(event):
         """Обработчик сообщений из каналов"""
         try:
+            # Пропускаем служебные сообщения
+            if not event.message.text and not event.message.caption:
+                return
+            
             # Получаем информацию о канале
             channel = await event.get_chat()
             channel_name = channel.title or channel.username or "Unknown"
@@ -408,11 +442,15 @@ async def main():
             # Получаем текст сообщения
             message_text = event.message.text or event.message.caption or ""
             
-            if not message_text:
+            if not message_text.strip():
                 return
+            
+            logger.info(f"📨 Получено сообщение из {channel_name}: {message_text[:100]}...")
             
             # Проверяем на военные ключевые слова
             if contains_war_keywords(message_text):
+                logger.info(f"🎯 Найдены ключевые слова в сообщении из {channel_name}")
+                
                 # Создаем ID поста
                 post_id = f"tg_{event.chat_id}_{event.message.id}"
                 
@@ -425,7 +463,11 @@ async def main():
                 )
                 
                 if success_count > 0:
-                    logger.info(f"📢 Обработано сообщение из {channel_name}")
+                    logger.info(f"📢 Обработано сообщение из {channel_name} для {success_count} подписчиков")
+                else:
+                    logger.info(f"ℹ️ Сообщение из {channel_name} уже было отправлено ранее")
+            else:
+                logger.info(f"⏭️ Сообщение из {channel_name} не содержит ключевых слов, пропускаем")
         
         except Exception as e:
             logger.error(f"❌ Ошибка обработки канала: {e}")
@@ -445,7 +487,8 @@ async def main():
             "/stats - статистика\n"
             "/id - узнать свой ID\n"
             "/test - тестовая отправка\n"
-            "/channels - список отслеживаемых каналов"
+            "/channels - список отслеживаемых каналов\n"
+            "/debug - отладочная информация"
         )
         logger.info(f"👤 Новый подписчик: {user_id}")
     
@@ -476,7 +519,12 @@ async def main():
     async def test_handler(event):
         """Тестовая команда"""
         try:
-            await event.reply("🎯 Тестовое сообщение от системы военных сводок!\n\n✅ Бот работает корректно!")
+            await event.reply(
+                "🎯 **Тестовое сообщение от системы военных сводок!**\n\n"
+                "✅ Бот работает корректно!\n"
+                "📡 Мониторинг каналов и сайтов активен\n"
+                "⚡ Вы будете получать важные военные сводки"
+            )
             logger.info("✅ Тестовое сообщение отправлено")
         except Exception as e:
             logger.error(f"❌ Ошибка тестовой отправки: {e}")
@@ -494,16 +542,40 @@ async def main():
             f"🌐 **Новостные сайты:** {len(WEBSITES)} источников"
         )
     
+    @client.on(events.NewMessage(pattern='/debug'))
+    async def debug_handler(event):
+        """Отладочная информация"""
+        try:
+            # Проверяем подключение к каналам
+            connected_channels = []
+            for channel in CHANNELS[:10]:  # Проверяем первые 10 каналов
+                try:
+                    entity = await client.get_entity(channel)
+                    connected_channels.append(f"✅ {channel}")
+                except Exception as e:
+                    connected_channels.append(f"❌ {channel}: {str(e)}")
+            
+            channels_status = "\n".join(connected_channels)
+            
+            await event.reply(
+                f"🔧 **Отладочная информация:**\n\n"
+                f"👥 Подписчиков: {len(load_subscribers())}\n"
+                f"📡 Статус каналов:\n{channels_status}\n\n"
+                f"🔄 Бот активен и работает"
+            )
+        except Exception as e:
+            await event.reply(f"❌ Ошибка отладки: {e}")
+
     # ===== ФОНОВЫЕ ЗАДАЧИ =====
     async def periodic_checker():
         """Периодическая проверка RSS"""
         while True:
             try:
                 await check_all_feeds(db_conn, client)
-                logger.info("💤 Следующая проверка через 5 минут")
+                logger.info("💤 Следующая проверка RSS через 5 минут")
                 await asyncio.sleep(300)  # 5 минут
             except Exception as e:
-                logger.error(f"❌ Ошибка в проверке: {e}")
+                logger.error(f"❌ Ошибка в проверке RSS: {e}")
                 await asyncio.sleep(60)
     
     async def status_logger():
@@ -512,24 +584,28 @@ async def main():
             subscribers = load_subscribers()
             logger.info(f"📊 Статус: {len(subscribers)} подписчиков, мониторинг {len(CHANNELS)} каналов и {len(WEBSITES)} сайтов")
             await asyncio.sleep(3600)  # 1 час
-    
+
     # ===== ЗАПУСК =====
     try:
         logger.info("🎯 Запуск системы военных сводок...")
         
         await client.start(bot_token=BOT_TOKEN)
         
-        # Добавляем обработчики для каналов
+        logger.info("⏳ Подключаемся к Telegram каналам...")
+        
+        # Проверяем подключение к каналам
+        connected_count = 0
         for channel in CHANNELS:
             try:
-                await client.get_entity(channel)
+                entity = await client.get_entity(channel)
+                connected_count += 1
                 logger.info(f"✅ Канал подключен: {channel}")
             except Exception as e:
                 logger.error(f"❌ Ошибка подключения к каналу {channel}: {e}")
         
-        logger.info("✅ Бот успешно запущен!")
+        logger.info(f"✅ Бот успешно запущен!")
         logger.info(f"📊 Подписчиков: {len(subscribers)}")
-        logger.info(f"📰 Каналов: {len(CHANNELS)}")
+        logger.info(f"📰 Каналов подключено: {connected_count}/{len(CHANNELS)}")
         logger.info(f"🌐 Сайтов: {len(WEBSITES)}")
         
         # Запускаем фоновые задачи
@@ -543,9 +619,10 @@ async def main():
                     user_id,
                     "🟢 **Система военных сводок запущена!**\n\n"
                     "✅ Бот активен и начал мониторинг:\n"
-                    f"📰 {len(CHANNELS)} Telegram каналов\n"
+                    f"📰 {connected_count}/{len(CHANNELS)} Telegram каналов\n"
                     f"🌐 {len(WEBSITES)} новостных сайтов\n\n"
-                    "⚡ Ожидайте важные военные сводки"
+                    "⚡ Ожидайте важные военные сводки\n"
+                    "🔧 Для отладки используйте /debug"
                 )
             except Exception as e:
                 logger.error(f"❌ Не удалось уведомить {user_id}: {e}")
