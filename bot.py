@@ -140,10 +140,6 @@ STOP_WORDS = [
     'дом', 'квартира', 'ремонт', 'интерьер',
     'диета', 'похудение', 'фитнес', 'тренажерный зал', 'йога',
     'юмор', 'анекдот', 'мем', 'прикол', 'розыгрыш',
-    'ракетная опасность', 'авиационная опасность', 'опасность бпла', 'бпла в воздухе',
-    'воздушная опасность', 'воздушная тревога', 'пво сработало', 'пво работает',
-    'обнаружены бпла', 'бпла над', 'дрон над', 'беспилотник над',
-    'сирена', 'сирены', 'тревога', 'воздушная тревога',
     'спокойной ночи', 'доброй ночи', 'доброе утро', 'с добрым утром',
     'ночные чаты', 'утренние чаты', 'ночной чат', 'утренний чат',
     'отличного дня', 'хорошего дня', 'удачного дня',
@@ -156,7 +152,6 @@ STOP_WORDS = [
     'моё мнение', 'личное мнение', 'хочу рассказать',
     'уютный вечер', 'домашний уют', 'семейный вечер',
     'поздравляю', 'поздравления', 'с праздником', 'с днем рождения',
-    'ВНИМАНИЕ', 'ВСЕМ', 'СРОЧНО', 'ВАЖНО', 'ОПАСНОСТЬ', 'ТРЕВОГА',
     'рецепт', 'кулинария', 'готовим', 'блюдо',
     'совет', 'рекомендация', 'лайфхак'
 ]
@@ -230,18 +225,21 @@ def contains_war_keywords(text):
     # Проверяем стоп-слова
     for stop_word in STOP_WORDS:
         if stop_word.lower() in text_lower:
+            logger.info(f"⏭️ Отфильтровано стоп-словом: {stop_word}")
             return False
     
-    # Проверка на капс
-    if len(text) > 10:
+    # Проверка на капс (только для очень длинных капс-сообщений)
+    if len(text) > 50:
         caps_count = sum(1 for char in text if char.isupper())
         caps_ratio = caps_count / len(text)
-        if caps_ratio > 0.3:
+        if caps_ratio > 0.7:  # Только очень высокий процент капса
+            logger.info(f"⏭️ Отфильтровано из-за капса: {caps_ratio:.2f}")
             return False
     
     # Проверяем военные ключевые слова
     for keyword in WAR_KEYWORDS:
         if keyword.lower() in text_lower:
+            logger.info(f"🎯 Найдено ключевое слово: {keyword}")
             return True
     
     return False
@@ -376,10 +374,13 @@ def format_website_message(article):
 async def send_to_subscribers(client, message_text, post_id, channel_name, conn):
     """Отправка сообщения всем подписчикам"""
     if is_post_sent(conn, post_id):
+        logger.info(f"⏭️ Пост {post_id} уже был отправлен ранее")
         return 0
     
     subscribers = load_subscribers()
     success_count = 0
+    
+    logger.info(f"📤 Отправка сообщения из {channel_name} для {len(subscribers)} подписчиков")
     
     for user_id in subscribers:
         try:
@@ -396,7 +397,7 @@ async def send_to_subscribers(client, message_text, post_id, channel_name, conn)
     
     if success_count > 0:
         mark_post_sent(conn, post_id, channel_name, message_text[:100])
-        logger.info(f"✅ Отправлено из {channel_name} для {success_count} подписчиков")
+        logger.info(f"✅ УСПЕХ: Отправлено из {channel_name} для {success_count} подписчиков")
     
     return success_count
 
@@ -426,51 +427,76 @@ async def main():
     subscribers = load_subscribers()
     logger.info(f"👥 Загружено подписчиков: {len(subscribers)}")
     
+    # Список для хранения entity каналов
+    channel_entities = []
+    
     # ===== ОБРАБОТЧИК ТЕЛЕГРАМ КАНАЛОВ =====
-    @client.on(events.NewMessage(chats=CHANNELS))
-    async def channel_handler(event):
-        """Обработчик сообщений из каналов"""
+    @client.on(events.NewMessage)
+    async def universal_handler(event):
+        """Универсальный обработчик сообщений"""
         try:
-            # Пропускаем служебные сообщения
-            if not event.message.text and not event.message.caption:
+            # Пропускаем сообщения от самого бота
+            if event.message.out:
+                return
+                
+            # Получаем информацию о чате
+            chat = await event.get_chat()
+            chat_id = chat.id
+            chat_username = getattr(chat, 'username', None)
+            chat_title = getattr(chat, 'title', None)
+            
+            # Проверяем, является ли чат одним из отслеживаемых каналов
+            is_tracked_channel = False
+            channel_identifier = None
+            
+            if chat_username and chat_username in CHANNELS:
+                is_tracked_channel = True
+                channel_identifier = chat_username
+            elif chat_title and any(channel.lower() in chat_title.lower() for channel in CHANNELS):
+                is_tracked_channel = True
+                channel_identifier = chat_title
+            elif str(chat_id) in [str(e.id) for e in channel_entities if hasattr(e, 'id')]:
+                is_tracked_channel = True
+                channel_identifier = f"id_{chat_id}"
+            
+            if not is_tracked_channel:
                 return
             
-            # Получаем информацию о канале
-            channel = await event.get_chat()
-            channel_name = channel.title or channel.username or "Unknown"
+            logger.info(f"📨 СООБЩЕНИЕ ИЗ КАНАЛА: {channel_identifier}")
             
             # Получаем текст сообщения
             message_text = event.message.text or event.message.caption or ""
             
             if not message_text.strip():
+                logger.info("⏭️ Пустое сообщение, пропускаем")
                 return
             
-            logger.info(f"📨 Получено сообщение из {channel_name}: {message_text[:100]}...")
+            logger.info(f"📝 Текст сообщения: {message_text[:200]}...")
             
             # Проверяем на военные ключевые слова
             if contains_war_keywords(message_text):
-                logger.info(f"🎯 Найдены ключевые слова в сообщении из {channel_name}")
+                logger.info(f"🎯 НАЙДЕНЫ КЛЮЧЕВЫЕ СЛОВА в сообщении из {channel_identifier}")
                 
                 # Создаем ID поста
-                post_id = f"tg_{event.chat_id}_{event.message.id}"
+                post_id = f"tg_{chat_id}_{event.message.id}"
                 
                 # Форматируем сообщение
-                formatted_message = format_telegram_message(message_text, channel_name)
+                formatted_message = format_telegram_message(message_text, channel_identifier)
                 
                 # Отправляем подписчикам
                 success_count = await send_to_subscribers(
-                    client, formatted_message, post_id, channel_name, db_conn
+                    client, formatted_message, post_id, channel_identifier, db_conn
                 )
                 
                 if success_count > 0:
-                    logger.info(f"📢 Обработано сообщение из {channel_name} для {success_count} подписчиков")
+                    logger.info(f"📢 УСПЕХ: Обработано сообщение из {channel_identifier} для {success_count} подписчиков")
                 else:
-                    logger.info(f"ℹ️ Сообщение из {channel_name} уже было отправлено ранее")
+                    logger.info(f"ℹ️ Сообщение из {channel_identifier} уже было отправлено ранее")
             else:
-                logger.info(f"⏭️ Сообщение из {channel_name} не содержит ключевых слов, пропускаем")
+                logger.info(f"⏭️ Сообщение из {channel_identifier} не содержит ключевых слов, пропускаем")
         
         except Exception as e:
-            logger.error(f"❌ Ошибка обработки канала: {e}")
+            logger.error(f"❌ Ошибка обработки сообщения: {e}")
 
     # ===== КОМАНДЫ БОТА =====
     @client.on(events.NewMessage(pattern='/start'))
@@ -488,7 +514,8 @@ async def main():
             "/id - узнать свой ID\n"
             "/test - тестовая отправка\n"
             "/channels - список отслеживаемых каналов\n"
-            "/debug - отладочная информация"
+            "/debug - отладочная информация\n"
+            "/force_check - принудительная проверка"
         )
         logger.info(f"👤 Новый подписчик: {user_id}")
     
@@ -532,7 +559,7 @@ async def main():
     @client.on(events.NewMessage(pattern='/channels'))
     async def channels_handler(event):
         """Показать список отслеживаемых каналов"""
-        channels_list = "\n".join([f"• {channel}" for channel in CHANNELS[:20]])  # Показываем первые 20
+        channels_list = "\n".join([f"• {channel}" for channel in CHANNELS[:20]])
         if len(CHANNELS) > 20:
             channels_list += f"\n• ... и еще {len(CHANNELS) - 20} каналов"
         
@@ -548,23 +575,35 @@ async def main():
         try:
             # Проверяем подключение к каналам
             connected_channels = []
-            for channel in CHANNELS[:10]:  # Проверяем первые 10 каналов
+            for channel in CHANNELS[:15]:  # Проверяем первые 15 каналов
                 try:
                     entity = await client.get_entity(channel)
+                    channel_entities.append(entity)
                     connected_channels.append(f"✅ {channel}")
                 except Exception as e:
-                    connected_channels.append(f"❌ {channel}: {str(e)}")
+                    connected_channels.append(f"❌ {channel}: {str(e)[:50]}")
             
             channels_status = "\n".join(connected_channels)
             
             await event.reply(
                 f"🔧 **Отладочная информация:**\n\n"
                 f"👥 Подписчиков: {len(load_subscribers())}\n"
-                f"📡 Статус каналов:\n{channels_status}\n\n"
+                f"📡 Подключено каналов: {len(channel_entities)}\n"
+                f"📊 Статус каналов:\n{channels_status}\n\n"
                 f"🔄 Бот активен и работает"
             )
         except Exception as e:
             await event.reply(f"❌ Ошибка отладки: {e}")
+    
+    @client.on(events.NewMessage(pattern='/force_check'))
+    async def force_check_handler(event):
+        """Принудительная проверка"""
+        try:
+            await event.reply("🔄 Запускаю принудительную проверку...")
+            await check_all_feeds(db_conn, client)
+            await event.reply("✅ Проверка завершена!")
+        except Exception as e:
+            await event.reply(f"❌ Ошибка проверки: {e}")
 
     # ===== ФОНОВЫЕ ЗАДАЧИ =====
     async def periodic_checker():
@@ -593,13 +632,15 @@ async def main():
         
         logger.info("⏳ Подключаемся к Telegram каналам...")
         
-        # Проверяем подключение к каналам
+        # Подключаемся к каналам и сохраняем entity
         connected_count = 0
         for channel in CHANNELS:
             try:
                 entity = await client.get_entity(channel)
+                channel_entities.append(entity)
                 connected_count += 1
                 logger.info(f"✅ Канал подключен: {channel}")
+                await asyncio.sleep(0.5)  # Задержка между подключениями
             except Exception as e:
                 logger.error(f"❌ Ошибка подключения к каналу {channel}: {e}")
         
@@ -607,6 +648,7 @@ async def main():
         logger.info(f"📊 Подписчиков: {len(subscribers)}")
         logger.info(f"📰 Каналов подключено: {connected_count}/{len(CHANNELS)}")
         logger.info(f"🌐 Сайтов: {len(WEBSITES)}")
+        logger.info(f"🎯 Ожидаю сообщения из каналов...")
         
         # Запускаем фоновые задачи
         asyncio.create_task(periodic_checker())
