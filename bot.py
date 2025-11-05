@@ -342,6 +342,49 @@ def format_website_message(article):
         f"🔗 [Читать на сайте]({article['link']})"
     )
 
+# ===== ОБРАБОТКА ТЕЛЕГРАМ КАНАЛОВ =====
+async def send_to_subscribers(client, message_text, post_id, channel_name, conn):
+    """Отправка сообщения всем подписчикам"""
+    if is_post_sent(conn, post_id):
+        return 0
+    
+    subscribers = load_subscribers()
+    success_count = 0
+    
+    for user_id in subscribers:
+        try:
+            await client.send_message(
+                user_id,
+                message_text,
+                parse_mode='Markdown',
+                link_preview=False
+            )
+            success_count += 1
+            await asyncio.sleep(0.1)  # Задержка между отправками
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки {user_id}: {e}")
+    
+    if success_count > 0:
+        mark_post_sent(conn, post_id, channel_name, message_text[:100])
+        logger.info(f"✅ Отправлено из {channel_name} для {success_count} подписчиков")
+    
+    return success_count
+
+def format_telegram_message(text, channel_name):
+    """Форматирование сообщения из Telegram канала"""
+    # Обрезаем текст если слишком длинный
+    if len(text) > 800:
+        text = text[:800] + "..."
+    
+    return (
+        f"🎯 **Экстренная сводка**\n"
+        f"📢 **{channel_name}**\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"{text}\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"#сводка"
+    )
+
 # ===== ОСНОВНОЙ БОТ =====
 async def main():
     """Главная функция бота"""
@@ -353,6 +396,40 @@ async def main():
     subscribers = load_subscribers()
     logger.info(f"👥 Загружено подписчиков: {len(subscribers)}")
     
+    # ===== ОБРАБОТЧИК ТЕЛЕГРАМ КАНАЛОВ =====
+    @client.on(events.NewMessage(chats=CHANNELS))
+    async def channel_handler(event):
+        """Обработчик сообщений из каналов"""
+        try:
+            # Получаем информацию о канале
+            channel = await event.get_chat()
+            channel_name = channel.title or channel.username or "Unknown"
+            
+            # Получаем текст сообщения
+            message_text = event.message.text or event.message.caption or ""
+            
+            if not message_text:
+                return
+            
+            # Проверяем на военные ключевые слова
+            if contains_war_keywords(message_text):
+                # Создаем ID поста
+                post_id = f"tg_{event.chat_id}_{event.message.id}"
+                
+                # Форматируем сообщение
+                formatted_message = format_telegram_message(message_text, channel_name)
+                
+                # Отправляем подписчикам
+                success_count = await send_to_subscribers(
+                    client, formatted_message, post_id, channel_name, db_conn
+                )
+                
+                if success_count > 0:
+                    logger.info(f"📢 Обработано сообщение из {channel_name}")
+        
+        except Exception as e:
+            logger.error(f"❌ Ошибка обработки канала: {e}")
+
     # ===== КОМАНДЫ БОТА =====
     @client.on(events.NewMessage(pattern='/start'))
     async def start_handler(event):
@@ -361,12 +438,14 @@ async def main():
         await event.reply(
             "🎯 **Добро пожаловать в систему ВОЕННЫХ сводок!**\n\n"
             "✅ Вы подписались на получение ВОЕННЫХ новостей\n"
+            "📰 Источники: Telegram каналы и новостные сайты\n"
             "⚡ Теперь вы будете получать только важные военные и политические сводки\n\n"
             "✨ Команды:\n"
             "/stop - отписаться\n"
             "/stats - статистика\n"
             "/id - узнать свой ID\n"
-            "/test - тестовая отправка"
+            "/test - тестовая отправка\n"
+            "/channels - список отслеживаемых каналов"
         )
         logger.info(f"👤 Новый подписчик: {user_id}")
     
@@ -397,10 +476,23 @@ async def main():
     async def test_handler(event):
         """Тестовая команда"""
         try:
-            await event.reply("🎯 Тестовое сообщение от системы военных сводок!")
+            await event.reply("🎯 Тестовое сообщение от системы военных сводок!\n\n✅ Бот работает корректно!")
             logger.info("✅ Тестовое сообщение отправлено")
         except Exception as e:
             logger.error(f"❌ Ошибка тестовой отправки: {e}")
+    
+    @client.on(events.NewMessage(pattern='/channels'))
+    async def channels_handler(event):
+        """Показать список отслеживаемых каналов"""
+        channels_list = "\n".join([f"• {channel}" for channel in CHANNELS[:20]])  # Показываем первые 20
+        if len(CHANNELS) > 20:
+            channels_list += f"\n• ... и еще {len(CHANNELS) - 20} каналов"
+        
+        await event.reply(
+            f"📢 **Отслеживаемые каналы:**\n\n"
+            f"{channels_list}\n\n"
+            f"🌐 **Новостные сайты:** {len(WEBSITES)} источников"
+        )
     
     # ===== ФОНОВЫЕ ЗАДАЧИ =====
     async def periodic_checker():
@@ -418,7 +510,7 @@ async def main():
         """Логирование статуса"""
         while True:
             subscribers = load_subscribers()
-            logger.info(f"📊 Статус: {len(subscribers)} подписчиков")
+            logger.info(f"📊 Статус: {len(subscribers)} подписчиков, мониторинг {len(CHANNELS)} каналов и {len(WEBSITES)} сайтов")
             await asyncio.sleep(3600)  # 1 час
     
     # ===== ЗАПУСК =====
@@ -427,8 +519,18 @@ async def main():
         
         await client.start(bot_token=BOT_TOKEN)
         
+        # Добавляем обработчики для каналов
+        for channel in CHANNELS:
+            try:
+                await client.get_entity(channel)
+                logger.info(f"✅ Канал подключен: {channel}")
+            except Exception as e:
+                logger.error(f"❌ Ошибка подключения к каналу {channel}: {e}")
+        
         logger.info("✅ Бот успешно запущен!")
         logger.info(f"📊 Подписчиков: {len(subscribers)}")
+        logger.info(f"📰 Каналов: {len(CHANNELS)}")
+        logger.info(f"🌐 Сайтов: {len(WEBSITES)}")
         
         # Запускаем фоновые задачи
         asyncio.create_task(periodic_checker())
@@ -439,8 +541,10 @@ async def main():
             try:
                 await client.send_message(
                     user_id,
-                    "🟢 **Система военных сводок запущена!**\n"
-                    "✅ Бот активен и начал мониторинг новостей\n"
+                    "🟢 **Система военных сводок запущена!**\n\n"
+                    "✅ Бот активен и начал мониторинг:\n"
+                    f"📰 {len(CHANNELS)} Telegram каналов\n"
+                    f"🌐 {len(WEBSITES)} новостных сайтов\n\n"
                     "⚡ Ожидайте важные военные сводки"
                 )
             except Exception as e:
