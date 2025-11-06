@@ -1,6 +1,4 @@
 telethon==1.28.5
-aiohttp==3.9.1
-beautifulsoup4==4.12.2
+aiohttp==3.8.5
 feedparser==6.0.10
 pytz==2023.3
-lxml==4.9.3
