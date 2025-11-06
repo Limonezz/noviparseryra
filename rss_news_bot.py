@@ -13,7 +13,7 @@ import feedparser
 API_ID = os.environ.get('API_ID', '24826804')
 API_HASH = os.environ.get('API_HASH', '048e59c243cce6ff788a7da214bf8119')
 SESSION_STRING = os.environ.get('SESSION_STRING', "1ApWapzMBuy-exPfF7z634N4Gos8qEwxZ92Nj1r4PWBEd55yqbaP_jcaTT6RiRwd5N4k2snlw_NaVLZ_2C4AvxvB_UG_exIrWgIOj6wsZrHlvBKt92xsGsEbZeo3l95d_6Vr5KKgWaxw531DwOrtWH-lerhkJ7XlDWtt_c225I7W0lIAk8P_k6gzm5oGvRFXqe0ivHxU7q4sJz6V61Ca0jyA_Sv-74OxB9l07HmIbOAC66oCtekxj4G5MTKKudofzmu2IqjqTgfFHwnKzE6hA3qik1SqSWdtWvmXHGb_44qPSk2dWGdW7vsN8inFuByDQLCF1_VLdGe0aFohbN0TXKKi7k0C8g2I=")
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '7597923417:AAEyZvTyyrPFQDz1o1qURDeCEoBFc0fMWaY')
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '8306634056:AAEXAd3P6TnH7OgpVoYCoI1FezacXtJuei8')
 
 # Веб-сайты для парсинга
 WEBSITES = [
