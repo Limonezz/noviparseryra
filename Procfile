@@ -1,2 +1,2 @@
-telegram_bot: python telegram_monitor_bot.py
+telegram_bot: python telegabot.py
 rss_bot: python rssbot.py
