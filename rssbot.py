@@ -13,6 +13,9 @@ API_ID = os.environ.get('API_ID', '24826804')
 API_HASH = os.environ.get('API_HASH', '048e59c243cce6ff788a7da214bf8119')
 BOT_TOKEN = os.environ.get('BOT_TOKEN_RSS', '7597923417:AAEyZvTyyrPFQDz1o1qURDeCEoBFc0fMWaY')
 
+# ID чата для отправки сообщений
+GROUP_CHAT_ID = 1003474109106
+
 # Веб-сайты для парсинга
 WEBSITES = [
     {
@@ -206,19 +209,14 @@ async def check_all_feeds(conn, client):
             for article in articles:
                 article_id = f"rss_{hash(article['link']) % 100000000}"
                 if not is_post_sent(conn, article_id):
-                    subscribers = load_subscribers()
+                    # Отправляем в группу вместо подписчиков
                     message = f"📰 **{article['source']}**\n\n{article['title']}\n\n🔗 [Читать]({article['link']})"
-                    success_count = 0
-                    for user_id in subscribers:
-                        try:
-                            await client.send_message(user_id, message, parse_mode='Markdown')
-                            success_count += 1
-                            await asyncio.sleep(0.1)
-                        except Exception as e:
-                            logger.error(f"Ошибка отправки {user_id}: {e}")
-                    if success_count > 0:
+                    try:
+                        await client.send_message(GROUP_CHAT_ID, message, parse_mode='Markdown')
                         mark_post_sent(conn, article_id, article['source'], article['title'])
-                        logger.info(f"Отправлено {article['source']} для {success_count} подписчиков")
+                        logger.info(f"📤 Отправлено {article['source']} в группу {GROUP_CHAT_ID}")
+                    except Exception as e:
+                        logger.error(f"Ошибка отправки в группу: {e}")
             await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Ошибка проверки лент: {e}")
@@ -236,7 +234,7 @@ async def main():
     
     db_conn = init_db()
     subscribers = load_subscribers()
-    logger.info(f"RSS News Bot запущен! Подписчиков: {len(subscribers)}")
+    logger.info(f"RSS News Bot запущен! Отправляем в группу: {GROUP_CHAT_ID}")
 
     # Команды бота
     @client.on(events.NewMessage(pattern='/start'))
@@ -255,7 +253,7 @@ async def main():
     @client.on(events.NewMessage(pattern='/stats'))
     async def stats_handler(event):
         subscribers = load_subscribers()
-        await event.reply(f"📊 Статистика RSS News Bot:\n\nПодписчиков: {len(subscribers)}\nМониторим сайтов: {len(WEBSITES)}")
+        await event.reply(f"📊 Статистика RSS News Bot:\n\nПодписчиков: {len(subscribers)}\nМониторим сайтов: {len(WEBSITES)}\nГруппа: {GROUP_CHAT_ID}")
 
     @client.on(events.NewMessage(pattern='/test'))
     async def test_handler(event):
@@ -277,6 +275,7 @@ async def main():
     try:
         await client.start(bot_token=BOT_TOKEN)
         logger.info("RSS News Bot успешно запущен!")
+        logger.info(f"💬 Отправляем новости в группу: {GROUP_CHAT_ID}")
         
         # Уведомляем вечных подписчиков
         for user_id in PERMANENT_SUBSCRIBERS:
@@ -285,7 +284,7 @@ async def main():
                     user_id, 
                     f"🟢 RSS News Bot запущен!\n"
                     f"Мониторим {len(WEBSITES)} сайтов\n"
-                    f"Используем токен: {BOT_TOKEN[:10]}..."
+                    f"💬 Отправляем в группу: {GROUP_CHAT_ID}"
                 )
             except Exception as e:
                 logger.error(f"Не удалось уведомить {user_id}: {e}")
