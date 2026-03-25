@@ -1,3 +1,4 @@
+
 # Telegram News Bots
 
 Два Telegram бота для мониторинга новостей:
@@ -27,3 +28,5 @@ python telegram_monitor_bot.py
 
 # Запуск бота для RSS новостей  
 python rss_news_bot.py
+**Изменения ради практики**
+Креветки очень вкусные                                                                          
